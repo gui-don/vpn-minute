@@ -27,3 +27,8 @@ variable "secret_key" {
   description = "Credentials: AWS secret key. Pass this as a variable, never write password in the code."
   type        = string
 }
+
+variable "region" {
+  description = "AWS region where resources will be created"
+  type        = string
+}

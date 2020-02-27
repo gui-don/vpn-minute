@@ -81,15 +81,15 @@ resource "aws_instance" "this" {
   ami           = local.is_default_vpc ? data.aws_ami.ubuntu.0.id : var.ami_id
   instance_type = var.instance_type
 
-  security_groups        = local.is_default_vpc ? [aws_security_group.this.id] : null
-  vpc_security_group_ids = ! local.is_default_vpc ? [aws_security_group.this.id] : null
+  security_groups             = local.is_default_vpc ? [aws_security_group.this.id] : null
+  vpc_security_group_ids      = ! local.is_default_vpc ? [aws_security_group.this.id] : null
   subnet_id                   = "" == var.subnet_id ? tolist(element(concat(data.aws_subnet_ids.this.*.ids, [""]), 0))[0] : var.subnet_id
   associate_public_ip_address = true
 
   ebs_optimized = true
   root_block_device {
     delete_on_termination = true
-    encrypted = true
+    encrypted             = true
   }
 
   //TODO This is temporary
