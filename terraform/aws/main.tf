@@ -56,8 +56,7 @@ resource "aws_security_group_rule" "this_ingress" {
   security_group_id = aws_security_group.this.id
 }
 
-//TODO This is temporary
-resource "aws_security_group_rule" "this_ingress_tmp" {
+resource "aws_security_group_rule" "this_ingress_22_tmp" {
   type        = "ingress"
   from_port   = 22
   to_port     = 22
@@ -77,6 +76,25 @@ resource "aws_security_group_rule" "this_egress" {
   security_group_id = aws_security_group.this.id
 }
 
+resource "aws_key_pair" "this" {
+  key_name   = "tftest-ssh-${random_string.this.result}"
+  public_key = var.public_key
+}
+
+data "template_cloudinit_config" "this" {
+  part {
+    content_type = "text/x-shellscript"
+    content      =<<EOF
+#!/bin/bash
+add-apt-repository -y ppa:wireguard/wireguard
+apt-get update
+apt-get install -y wireguard-dkms wireguard-tools awscli
+sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+sysctl -p
+EOF
+  }
+}
+
 resource "aws_instance" "this" {
   ami           = local.is_default_vpc ? data.aws_ami.ubuntu.0.id : var.ami_id
   instance_type = var.instance_type
@@ -92,11 +110,9 @@ resource "aws_instance" "this" {
     encrypted             = true
   }
 
-  //TODO This is temporary
-  key_name = "quentin-ssh"
+  key_name = aws_key_pair.this.key_name
 
-  //TODO install wireguard on boot
-  user_data = null
+  user_data = data.template_cloudinit_config.this.rendered 
 
   tags = {
     Name      = "tftest-${random_string.this.result}"

@@ -18,6 +18,11 @@ variable "instance_type" {
   default     = "t3a.nano"
 }
 
+variable "public_key" {
+  description = "Public ssh key"
+  type = string
+}
+
 variable "access_key" {
   description = "Credentials: AWS access key."
   type        = string
