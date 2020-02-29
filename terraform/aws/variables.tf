@@ -23,6 +23,11 @@ variable "public_key" {
   type = string
 }
 
+variable "allow_ssh" {
+  description = "Allow inbound ssh"
+  type = bool
+}
+
 variable "access_key" {
   description = "Credentials: AWS access key."
   type        = string

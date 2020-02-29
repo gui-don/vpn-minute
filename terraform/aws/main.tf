@@ -36,7 +36,7 @@ data "aws_subnet_ids" "this" {
 }
 
 resource "aws_security_group" "this" {
-  name        = "tftest-sg-${random_string.this.result}"
+  name        = "wireguard-sg-${random_string.this.result}"
   description = "Security group for wireguard instance ${random_string.this.result}"
   vpc_id      = "" == var.vpc_id ? data.aws_vpc.default.0.id : var.vpc_id
 
@@ -56,7 +56,8 @@ resource "aws_security_group_rule" "this_ingress" {
   security_group_id = aws_security_group.this.id
 }
 
-resource "aws_security_group_rule" "this_ingress_22_tmp" {
+resource "aws_security_group_rule" "this_ingress_22" {
+  count = var.allow_ssh ? 1 : 0
   type        = "ingress"
   from_port   = 22
   to_port     = 22
@@ -77,30 +78,15 @@ resource "aws_security_group_rule" "this_egress" {
 }
 
 resource "aws_key_pair" "this" {
-  key_name   = "tftest-ssh-${random_string.this.result}"
+  key_name   = "wireguard-ssh-${random_string.this.result}"
   public_key = var.public_key
-}
-
-data "template_cloudinit_config" "this" {
-  part {
-    content_type = "text/x-shellscript"
-    content      =<<EOF
-#!/bin/bash
-add-apt-repository -y ppa:wireguard/wireguard
-apt-get update
-apt-get install -y wireguard-dkms wireguard-tools awscli
-sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
-sysctl -p
-EOF
-  }
 }
 
 resource "aws_instance" "this" {
   ami           = local.is_default_vpc ? data.aws_ami.ubuntu.0.id : var.ami_id
   instance_type = var.instance_type
 
-  security_groups             = local.is_default_vpc ? [aws_security_group.this.id] : null
-  vpc_security_group_ids      = ! local.is_default_vpc ? [aws_security_group.this.id] : null
+  vpc_security_group_ids      = [aws_security_group.this.id]
   subnet_id                   = "" == var.subnet_id ? tolist(element(concat(data.aws_subnet_ids.this.*.ids, [""]), 0))[0] : var.subnet_id
   associate_public_ip_address = true
 
@@ -112,10 +98,15 @@ resource "aws_instance" "this" {
 
   key_name = aws_key_pair.this.key_name
 
-  user_data = data.template_cloudinit_config.this.rendered 
-
   tags = {
-    Name      = "tftest-${random_string.this.result}"
+    Name      = "wireguard-${random_string.this.result}"
     Terraform = true
+  }
+
+  lifecycle {
+    # Due to several known issues in Terraform AWS provider related to arguments of aws_instance:
+    # (eg, https://github.com/terraform-providers/terraform-provider-aws/issues/2036)
+    # we have to ignore changes in the following arguments
+    ignore_changes = [private_ip, root_block_device, ebs_block_device, volume_tags]
   }
 }
