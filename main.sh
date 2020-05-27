@@ -124,11 +124,13 @@ create_ssh_key()
 {
   echo "Generate temporary ssh key..."
  
-  ssh-keygen -t rsa -b 4096 -f /tmp/toberandom -C "vpn-minute" -q -N ""
-  export SSH_PUBLIC_KEY=$(ssh-keygen -y -f /tmp/toberandom)
+  if [ ! -f /tmp/foo.txt ]; then
+    ssh-keygen -t rsa -b 4096 -f /tmp/toberandom -C "vpn-minute" -q -N ""
+  fi
 
   ssh-agent -a $SSH_AUTH_SOCK 
   ssh-add /tmp/toberandom
+  export SSH_PUBLIC_KEY=$(ssh-keygen -y -f /tmp/toberandom)
 
   echo -e "-> temporary ssh key generated."
 }
