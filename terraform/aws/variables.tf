@@ -15,7 +15,7 @@ variable "subnet_id" {
 
 variable "instance_type" {
   description = "Type of instance that will run Wireguard"
-  default     = "t3a.nano"
+  default     = "t3.nano"
 }
 
 variable "public_key" {
