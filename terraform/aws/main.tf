@@ -1,6 +1,7 @@
 locals {
   is_default_vpc   = "" == var.vpc_id
   is_defaut_ami_id = "" == var.ami_id
+  prefix           = "vpn-minute"
 }
 
 resource "random_string" "this" {
@@ -36,12 +37,12 @@ data "aws_subnet_ids" "this" {
 }
 
 resource "aws_security_group" "this" {
-  name        = "wireguard-sg-${random_string.this.result}"
+  name        = "${local.prefix}-sg-${random_string.this.result}"
   description = "Security group for wireguard instance ${random_string.this.result}"
   vpc_id      = "" == var.vpc_id ? data.aws_vpc.default.0.id : var.vpc_id
 
   tags = {
-    Name      = "tftest-sg-${random_string.this.result}"
+    Name      = "${local.prefix}-sg-${random_string.this.result}"
     Terraform = true
   }
 }
@@ -57,7 +58,7 @@ resource "aws_security_group_rule" "this_ingress" {
 }
 
 resource "aws_security_group_rule" "this_ingress_22" {
-  count = var.allow_ssh ? 1 : 0
+  count       = var.allow_ssh ? 1 : 0
   type        = "ingress"
   from_port   = 22
   to_port     = 22
@@ -99,7 +100,7 @@ resource "aws_instance" "this" {
   key_name = aws_key_pair.this.key_name
 
   tags = {
-    Name      = "wireguard-${random_string.this.result}"
+    Name      = "${local.prefix}-${random_string.this.result}"
     Terraform = true
   }
 
