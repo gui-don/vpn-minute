@@ -170,7 +170,7 @@ run_terraform() {
       terraform apply -auto-approve -var "region=$REGION" -var "public_key=$SSH_PUBLIC_KEY" -var "allow_ssh=true" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_KEY" terraform/aws
       export WIREGUARD_SERVER_PUBLIC_IP=$(terraform output -json |jq '.public_ip.value'|sed s/\"//g)
       generate_wireguard_configuration
-      configure_serveur_wireguard
+      configure_wireguard_server
       terraform apply -auto-approve -var "region=$REGION" -var "public_key=$SSH_PUBLIC_KEY" -var "allow_ssh=false" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_KEY" terraform/aws
     ;;
     *)
@@ -240,7 +240,7 @@ delete_wireguard_configuration() {
   echo -e "-> wireguard configuration deleted."
 }
 
-configure_serveur_wireguard() {
+configure_wireguard_server() {
   echo "Configure wireguard server"
 
   sleep 15
