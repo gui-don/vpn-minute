@@ -248,9 +248,9 @@ configure_wireguard_server() {
   sftp -i /tmp/toberandom -o StrictHostKeyChecking=no -o ConnectionAttempts=$SSH_TIMEOUT /tmp/toberandom-wireguard-server-config ubuntu@$WIREGUARD_SERVER_PUBLIC_IP:~/wg0.conf
   ssh -i /tmp/toberandom -o StrictHostKeyChecking=no -o ConnectionAttempts=$SSH_TIMEOUT ubuntu@$WIREGUARD_SERVER_PUBLIC_IP <<'ENDSSH'
 set -e 
-sudo add-apt-repository -y ppa:wireguard/wireguard
 sudo apt-get update
-sudo apt-get install -y wireguard-dkms wireguard-tools
+sudo apt-get upgrade -y
+sudo apt-get install -y wireguard
 sudo sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
 sudo sysctl -p
 sudo mv ~/wg0.conf /etc/wireguard/
