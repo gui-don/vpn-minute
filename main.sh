@@ -17,8 +17,8 @@ check_requirments()
 		exit 100
 	fi
      
-    if ! [ -x "$(command -v sftp)" ]; then
-		echo "Error: sftp is not installed." >&2
+    if ! [ -x "$(command -v scp)" ]; then
+		echo "Error: scp is not installed." >&2
 		exit 100
 	fi
 
@@ -28,7 +28,7 @@ check_requirments()
 	fi
     
     if ! [ -x "$(command -v wg)" ]; then
-		echo "Error: wireguard-tools is not installed." >&2
+		echo "Error: wireguard is not installed." >&2
 		exit 102
 	fi
     
@@ -243,9 +243,9 @@ delete_wireguard_configuration() {
 configure_wireguard_server() {
   echo "Configure wireguard server"
 
-  sleep 15
+#  sleep 20
 
-  sftp -i /tmp/toberandom -o StrictHostKeyChecking=no -o ConnectionAttempts=$SSH_TIMEOUT /tmp/toberandom-wireguard-server-config ubuntu@$WIREGUARD_SERVER_PUBLIC_IP:~/wg0.conf
+  scp -i /tmp/toberandom -o StrictHostKeyChecking=no -o ConnectionAttempts=$SSH_TIMEOUT /tmp/toberandom-wireguard-server-config ubuntu@$WIREGUARD_SERVER_PUBLIC_IP:~/wg0.conf
   ssh -i /tmp/toberandom -o StrictHostKeyChecking=no -o ConnectionAttempts=$SSH_TIMEOUT ubuntu@$WIREGUARD_SERVER_PUBLIC_IP <<'ENDSSH'
 set -e 
 sudo apt-get update
