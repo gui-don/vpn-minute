@@ -5,7 +5,6 @@ PROGRAM_NAME="vpn-minute"
 export PROVIDER=aws
 export REGION=ca-central-1
 export TF_DATA_DIR=/var/tmp/tobechange
-export SSH_AUTH_SOCK=/run/user/$UID/ssh-toberandom.socket
 export SSH_TIMEOUT=30
 
 set -e
@@ -17,7 +16,12 @@ check_requirments()
 		echo "Error: openssh-client is not installed." >&2
 		exit 100
 	fi
-    
+     
+    if ! [ -x "$(command -v sftp)" ]; then
+		echo "Error: sftp is not installed." >&2
+		exit 100
+	fi
+
     if ! [ -x "$(command -v terraform)" ]; then
 		echo "Error: terraform is not installed." >&2
 		exit 101
@@ -124,12 +128,10 @@ create_ssh_key()
 {
   echo "Generate temporary ssh key..."
  
-  if [ ! -f /tmp/foo.txt ]; then
+  if [ ! -f /tmp/toberandom ]; then
     ssh-keygen -t rsa -b 4096 -f /tmp/toberandom -C "vpn-minute" -q -N ""
   fi
 
-  ssh-agent -a $SSH_AUTH_SOCK 
-  ssh-add /tmp/toberandom
   export SSH_PUBLIC_KEY=$(ssh-keygen -y -f /tmp/toberandom)
 
   echo -e "-> temporary ssh key generated."
@@ -139,7 +141,6 @@ delete_ssh_key()
 {
   echo "Delete temporary ssh key..."
 
-  rm -f $SSH_AUTH_SOCK
   rm -f /tmp/toberandom /tmp/toberandom.pub 
 
   echo -e "-> temporary ssh key deleted." 
@@ -244,8 +245,8 @@ configure_serveur_wireguard() {
 
   sleep 15
 
-  scp -o StrictHostKeyChecking=no -o ConnectionAttempts=$SSH_TIMEOUT /tmp/toberandom-wireguard-server-config ubuntu@$WIREGUARD_SERVER_PUBLIC_IP:~/wg0.conf
-  ssh -o StrictHostKeyChecking=no -o ConnectionAttempts=$SSH_TIMEOUT ubuntu@$WIREGUARD_SERVER_PUBLIC_IP <<'ENDSSH'
+  sftp -i /tmp/toberandom -o StrictHostKeyChecking=no -o ConnectionAttempts=$SSH_TIMEOUT /tmp/toberandom-wireguard-server-config ubuntu@$WIREGUARD_SERVER_PUBLIC_IP:~/wg0.conf
+  ssh -i /tmp/toberandom -o StrictHostKeyChecking=no -o ConnectionAttempts=$SSH_TIMEOUT ubuntu@$WIREGUARD_SERVER_PUBLIC_IP <<'ENDSSH'
 set -e 
 sudo add-apt-repository -y ppa:wireguard/wireguard
 sudo apt-get update
