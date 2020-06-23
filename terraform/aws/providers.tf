@@ -1,8 +1,9 @@
 provider "aws" {
-  version    = "~> 2.60.0"
-  region     = var.region
-  access_key = var.access_key
-  secret_key = var.secret_key
+  version                 = "~> 2.60.0"
+  region                  = var.region
+  shared_credentials_file = var.shared_credentials_file
+  access_key              = var.access_key
+  secret_key              = var.secret_key
 }
 
 provider "random" {

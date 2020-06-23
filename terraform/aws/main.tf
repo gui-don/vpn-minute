@@ -86,7 +86,7 @@ resource "aws_key_pair" "this" {
 }
 
 resource "aws_launch_template" "this" {
-  name          = "${local.prefix}-${random_string.this.result}"
+  name = "${local.prefix}-${random_string.this.result}"
 
   network_interfaces {
     security_groups             = [aws_security_group.this.id]
@@ -123,7 +123,7 @@ resource "aws_launch_template" "this" {
 resource "aws_spot_fleet_request" "this" {
   iam_fleet_role  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-ec2-spot-fleet-tagging-role"
   target_capacity = 1
-  valid_until = timeadd(timestamp(), "86400h")
+  valid_until     = timeadd(timestamp(), "86400h")
 
   terminate_instances_with_expiration = true
 

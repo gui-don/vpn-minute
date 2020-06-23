@@ -20,22 +20,30 @@ variable "instance_type" {
 
 variable "public_key" {
   description = "Public ssh key"
-  type = string
+  type        = string
 }
 
 variable "allow_ssh" {
   description = "Allow inbound ssh"
-  type = bool
+  type        = bool
 }
 
 variable "access_key" {
   description = "Credentials: AWS access key."
   type        = string
+  default     = ""
 }
 
 variable "secret_key" {
   description = "Credentials: AWS secret key. Pass this as a variable, never write password in the code."
   type        = string
+  default     = ""
+}
+
+variable "shared_credentials_file" {
+  description = "Credentials: shared credential file."
+  type        = string
+  default     = ""
 }
 
 variable "region" {
