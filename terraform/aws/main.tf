@@ -10,6 +10,8 @@ resource "random_string" "this" {
   upper   = false
 }
 
+data "aws_caller_identity" "current" {}
+
 data "aws_ami" "ubuntu" {
   count       = local.is_defaut_ami_id ? 1 : 0
   most_recent = true
@@ -79,22 +81,28 @@ resource "aws_security_group_rule" "this_egress" {
 }
 
 resource "aws_key_pair" "this" {
-  key_name   = "wireguard-ssh-${random_string.this.result}"
+  key_name   = "${local.prefix}-${random_string.this.result}"
   public_key = var.public_key
 }
 
-resource "aws_instance" "this" {
-  ami           = local.is_default_vpc ? data.aws_ami.ubuntu.0.id : var.ami_id
-  instance_type = var.instance_type
+resource "aws_launch_template" "this" {
+  name          = "${local.prefix}-${random_string.this.result}"
 
-  vpc_security_group_ids      = [aws_security_group.this.id]
-  subnet_id                   = "" == var.subnet_id ? tolist(element(concat(data.aws_subnet_ids.this.*.ids, [""]), 0))[0] : var.subnet_id
-  associate_public_ip_address = true
+  network_interfaces {
+    security_groups             = [aws_security_group.this.id]
+    associate_public_ip_address = true
+    delete_on_termination       = true
+  }
 
-  ebs_optimized = true
-  root_block_device {
-    delete_on_termination = true
-    encrypted             = true
+  block_device_mappings {
+    device_name = "/dev/sda1"
+
+    ebs {
+      delete_on_termination = true
+      encrypted             = true
+      volume_size           = 8
+      volume_type           = "gp2"
+    }
   }
 
   key_name = aws_key_pair.this.key_name
@@ -104,10 +112,32 @@ resource "aws_instance" "this" {
     Terraform = true
   }
 
-  lifecycle {
-    # Due to several known issues in Terraform AWS provider related to arguments of aws_instance:
-    # (eg, https://github.com/terraform-providers/terraform-provider-aws/issues/2036)
-    # we have to ignore changes in the following arguments
-    ignore_changes = [private_ip, root_block_device, ebs_block_device, volume_tags]
+  monitoring {
+    enabled = true
+  }
+
+  image_id      = local.is_default_vpc ? data.aws_ami.ubuntu.0.id : var.ami_id
+  instance_type = var.instance_type
+}
+
+resource "aws_spot_fleet_request" "this" {
+  iam_fleet_role  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-ec2-spot-fleet-tagging-role"
+  target_capacity = 1
+
+  launch_template_config {
+    launch_template_specification {
+      id      = aws_launch_template.this.*.id[0]
+      version = aws_launch_template.this.*.latest_version[0]
+    }
+    overrides {
+      subnet_id = "" == var.subnet_id ? tolist(element(concat(data.aws_subnet_ids.this.*.ids, [""]), 0))[0] : var.subnet_id
+    }
+  }
+}
+
+data "aws_instance" "this" {
+  filter {
+    name   = "tag:aws:ec2spot:fleet-request-id"
+    values = [aws_spot_fleet_request.this.id]
   }
 }
