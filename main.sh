@@ -286,7 +286,9 @@ start_client_wireguard() {
 }
 
 stop_client_wireguard() {
-  sudo wg-quick down /tmp/wg0.conf
+  if [ -f /tmp/wg0.conf ]; then
+    sudo wg-quick down /tmp/wg0.conf
+  fi
 }
 
 ####
