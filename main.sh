@@ -174,7 +174,6 @@ run_terraform() {
     export WIREGUARD_SERVER_PUBLIC_IP=$(terraform output -json | jq '.public_ip.value' | sed s/\"//g)
     export WIREGUARD_SERVER_INSTANCE_ID=$(terraform output -json | jq '.instance_id.value' | sed s/\"//g)
     generate_wireguard_configuration
-    wait_for_server_readiness
     configure_wireguard_server
     terraform apply -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "allow_ssh=false" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
     ;;
@@ -246,15 +245,6 @@ delete_wireguard_configuration() {
   echo -e "-> wireguard configuration deleted."
 }
 
-wait_for_server_readiness() {
-  echo "Wait for server to be ready..."
-
-  aws ec2 wait instance-status-ok --instance-ids $WIREGUARD_SERVER_INSTANCE_ID
-  aws ec2 wait system-status-ok --instance-ids $WIREGUARD_SERVER_INSTANCE_ID
-
-  echo -e "-> server ready."
-}
-
 configure_wireguard_server() {
   echo "Configure wireguard server"
 
@@ -316,7 +306,7 @@ main() {
     echo "Not implemented yet."
     ;;
   *)
-    echo "Error: $ACTION is not a valide "
+    echo "Error: $ACTION is not a valid." >&2
     exit 1
     ;;
   esac
