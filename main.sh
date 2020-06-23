@@ -248,6 +248,8 @@ delete_wireguard_configuration() {
 configure_wireguard_server() {
   echo "Configure wireguard server"
 
+  aws ec2 wait instance-status-ok --instance-ids $WIREGUARD_SERVER_INSTANCE_ID
+  aws ec2 wait system-status-ok --instance-ids $WIREGUARD_SERVER_INSTANCE_ID
 
   local HOST_KEYS=$(aws --region=$AWS_DEFAULT_REGION ec2 get-console-output --instance-id $WIREGUARD_SERVER_INSTANCE_ID --output text | sed -n '/.*-----BEGIN SSH HOST KEY KEYS-----/,/-----END SSH HOST KEY KEYS-----/p' | sed -n '1!p' | sed -n '$!p' | awk -v ip="$WIREGUARD_SERVER_PUBLIC_IP" '{print ip" "$0}')
 
