@@ -174,6 +174,7 @@ run_terraform() {
     export WIREGUARD_SERVER_PUBLIC_IP=$(terraform output -json | jq '.public_ip.value' | sed s/\"//g)
     export WIREGUARD_SERVER_INSTANCE_ID=$(terraform output -json | jq '.instance_id.value' | sed s/\"//g)
     generate_wireguard_configuration
+    wait_for_server_readiness
     configure_wireguard_server
     terraform apply -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "allow_ssh=false" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
     ;;
@@ -237,7 +238,7 @@ Endpoint = $WIREGUARD_SERVER_PUBLIC_IP:51820"
 }
 
 delete_wireguard_configuration() {
-  echo "Delete wigreguard configuration..."
+  echo "Delete wireguard configuration..."
 
   rm -f /tmp/wg0.conf
   rm -f /tmp/toberandom-wireguard-server-config
@@ -245,11 +246,17 @@ delete_wireguard_configuration() {
   echo -e "-> wireguard configuration deleted."
 }
 
-configure_wireguard_server() {
-  echo "Configure wireguard server"
+wait_for_server_readiness() {
+  echo "Wait for server to be ready..."
 
   aws ec2 wait instance-status-ok --instance-ids $WIREGUARD_SERVER_INSTANCE_ID
   aws ec2 wait system-status-ok --instance-ids $WIREGUARD_SERVER_INSTANCE_ID
+
+  echo -e "-> server ready."
+}
+
+configure_wireguard_server() {
+  echo "Configure wireguard server"
 
   local HOST_KEYS=$(aws --region=$AWS_DEFAULT_REGION ec2 get-console-output --instance-id $WIREGUARD_SERVER_INSTANCE_ID --output text | sed -n '/.*-----BEGIN SSH HOST KEY KEYS-----/,/-----END SSH HOST KEY KEYS-----/p' | sed -n '1!p' | sed -n '$!p' | awk -v ip="$WIREGUARD_SERVER_PUBLIC_IP" '{print ip" "$0}')
 
