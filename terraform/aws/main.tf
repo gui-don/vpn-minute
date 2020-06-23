@@ -124,6 +124,8 @@ resource "aws_spot_fleet_request" "this" {
   iam_fleet_role  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-ec2-spot-fleet-tagging-role"
   target_capacity = 1
 
+  terminate_instances_with_expiration = true
+
   launch_template_config {
     launch_template_specification {
       id      = aws_launch_template.this.*.id[0]
