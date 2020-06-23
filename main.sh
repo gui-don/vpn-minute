@@ -71,7 +71,7 @@ check_arguments() {
       if test $# -gt 0; then
         export AWS_DEFAULT_REGION=$1
       else
-        echo "no region specified"
+        echo "No region specified." >&2
         exit 1
       fi
       shift
@@ -81,7 +81,7 @@ check_arguments() {
       if test $# -gt 0; then
         export AWS_DEFAULT_REGION=$1
       else
-        echo "no region specified"
+        echo "No region specified." >&2
         exit 1
       fi
       shift
@@ -91,7 +91,7 @@ check_arguments() {
       if test $# -gt 0; then
         export VPNM_PROVIDER=$1
       else
-        echo "No provider specified."
+        echo "No provider specified." >&2
         exit 1
       fi
       shift
@@ -101,7 +101,7 @@ check_arguments() {
       if test $# -gt 0; then
         export VPNM_PROVIDER=$1
       else
-        echo "No provider specified."
+        echo "No provider specified." >&2
         exit 1
       fi
       shift
@@ -119,7 +119,7 @@ check_arguments() {
       break
       ;;
     *)
-      echo "Error: $1 is not a valid option"
+      echo "Error: $1 is not a valid option" >&2
       exit 1
       ;;
     esac
@@ -179,7 +179,7 @@ run_terraform() {
     terraform apply -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "allow_ssh=false" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
     ;;
   *)
-    echo "Error: $VPNM_PROVIDER is not supported yet."
+    echo "Error: $VPNM_PROVIDER is not supported yet." >&2
     exit 1
     ;;
   esac
@@ -197,7 +197,7 @@ destroy_terraform() {
     terraform destroy -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=''" -var "allow_ssh=false" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
     ;;
   *)
-    echo "Error: $VPNM_PROVIDER is not supported yet."
+    echo "Error: $VPNM_PROVIDER is not supported yet." >&2
     exit 1
     ;;
   esac
