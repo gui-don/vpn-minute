@@ -60,7 +60,7 @@ check_arguments() {
       echo " "
       echo "options:"
       echo "-h, --help                show brief help"
-      echo "-p, --provider PROVIDER   set the region to use"
+      echo "-p, --provider PROVIDER   set the provider to use"
       echo "-r, --region REGION       set the region to use"
       exit 0
       ;;
@@ -87,7 +87,7 @@ check_arguments() {
     -p)
       shift
       if test $# -gt 0; then
-        export AWS_DEFAULT_REGION=$1
+        export PROVIDER=$1
       else
         echo "no provider specified"
         exit 1
