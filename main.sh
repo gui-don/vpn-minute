@@ -2,11 +2,13 @@
 
 PROGRAM_NAME="vpn-minute"
 
-export PROVIDER=aws
+export VPNM_PROVIDER=aws
+export VPNM_SSH_TIMEOUT=30
+
+export TF_DATA_DIR=/var/tmp/tobechange
+
 export AWS_DEFAULT_REGION=ca-central-1
 export AWS_SECRET_ACCESS_KEY=$AWS_ACCESS_KEY
-export TF_DATA_DIR=/var/tmp/tobechange
-export SSH_TIMEOUT=30
 
 set -e
 #set -x
@@ -87,9 +89,9 @@ check_arguments() {
     -p)
       shift
       if test $# -gt 0; then
-        export PROVIDER=$1
+        export VPNM_PROVIDER=$1
       else
-        echo "no provider specified"
+        echo "No provider specified."
         exit 1
       fi
       shift
@@ -97,9 +99,9 @@ check_arguments() {
     --provider)
       shift
       if test $# -gt 0; then
-        export PROVIDER=$1
+        export VPNM_PROVIDER=$1
       else
-        echo "no provider specified"
+        echo "No provider specified."
         exit 1
       fi
       shift
@@ -135,7 +137,7 @@ create_ssh_key() {
     ssh-keygen -t rsa -b 4096 -f /tmp/toberandom -C "vpn-minute" -q -N ""
   fi
 
-  export SSH_PUBLIC_KEY=$(ssh-keygen -y -f /tmp/toberandom)
+  export VPNM_SSH_PUBLIC_KEY=$(ssh-keygen -y -f /tmp/toberandom)
 
   echo -e "-> temporary ssh key generated."
 }
@@ -165,18 +167,18 @@ run_terraform() {
 
   mkdir -p $TF_DATA_DIR
 
-  case $PROVIDER in
+  case $VPNM_PROVIDER in
   aws)
     terraform init terraform/aws
-    terraform apply -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$SSH_PUBLIC_KEY" -var "allow_ssh=true" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
+    terraform apply -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "allow_ssh=true" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
     export WIREGUARD_SERVER_PUBLIC_IP=$(terraform output -json | jq '.public_ip.value' | sed s/\"//g)
     export WIREGUARD_SERVER_INSTANCE_ID=$(terraform output -json | jq '.instance_id.value' | sed s/\"//g)
     generate_wireguard_configuration
     configure_wireguard_server
-    terraform apply -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$SSH_PUBLIC_KEY" -var "allow_ssh=false" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
+    terraform apply -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "allow_ssh=false" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
     ;;
   *)
-    echo "Error: $PROVIDER is not supported yet."
+    echo "Error: $VPNM_PROVIDER is not supported yet."
     exit 1
     ;;
   esac
@@ -189,12 +191,12 @@ destroy_terraform() {
 
   mkdir -p $TF_DATA_DIR
 
-  case $PROVIDER in
+  case $VPNM_PROVIDER in
   aws)
     terraform destroy -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=''" -var "allow_ssh=false" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
     ;;
   *)
-    echo "Error: $PROVIDER is not supported yet."
+    echo "Error: $VPNM_PROVIDER is not supported yet."
     exit 1
     ;;
   esac
@@ -246,14 +248,13 @@ delete_wireguard_configuration() {
 configure_wireguard_server() {
   echo "Configure wireguard server"
 
-  local HOST_KEYS=`aws --region=$AWS_DEFAULT_REGION ec2 get-console-output --instance-id $WIREGUARD_SERVER_INSTANCE_ID --output text | sed -n '/.*-----BEGIN SSH HOST KEY KEYS-----/,/-----END SSH HOST KEY KEYS-----/p' | sed -n '1!p' | sed -n '$!p' | awk -v ip="$WIREGUARD_SERVER_PUBLIC_IP" '{print ip" "$0}'`
 
-  echo $HOST_KEYS > /tmp/vpn-minute-known_host
+  local HOST_KEYS=$(aws --region=$AWS_DEFAULT_REGION ec2 get-console-output --instance-id $WIREGUARD_SERVER_INSTANCE_ID --output text | sed -n '/.*-----BEGIN SSH HOST KEY KEYS-----/,/-----END SSH HOST KEY KEYS-----/p' | sed -n '1!p' | sed -n '$!p' | awk -v ip="$WIREGUARD_SERVER_PUBLIC_IP" '{print ip" "$0}')
 
-  sleep 10
+  echo $HOST_KEYS >/tmp/vpn-minute-known_host
 
-  scp -i /tmp/toberandom -o UserKnownHostsFile=/tmp/vpn-minute-known_host -o ConnectionAttempts=$SSH_TIMEOUT /tmp/toberandom-wireguard-server-config ubuntu@$WIREGUARD_SERVER_PUBLIC_IP:~/wg0.conf
-  ssh -i /tmp/toberandom -o UserKnownHostsFile=/tmp/vpn-minute-known_host -o ConnectionAttempts=$SSH_TIMEOUT ubuntu@$WIREGUARD_SERVER_PUBLIC_IP <<'ENDSSH'
+  scp -i /tmp/toberandom -o UserKnownHostsFile=/tmp/vpn-minute-known_host -o ConnectionAttempts=$VPNM_SSH_TIMEOUT /tmp/toberandom-wireguard-server-config ubuntu@$WIREGUARD_SERVER_PUBLIC_IP:~/wg0.conf
+  ssh -i /tmp/toberandom -o UserKnownHostsFile=/tmp/vpn-minute-known_host -o ConnectionAttempts=$VPNM_SSH_TIMEOUT ubuntu@$WIREGUARD_SERVER_PUBLIC_IP <<'ENDSSH'
 set -e 
 sudo apt-get update
 sudo apt-get upgrade -y
