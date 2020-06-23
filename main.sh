@@ -3,7 +3,7 @@
 PROGRAM_NAME="vpn-minute"
 
 export VPNM_PROVIDER=aws
-export VPNM_SSH_TIMEOUT=30
+export VPNM_SSH_CONNECTION_ATTEMPTS=30
 
 export TF_DATA_DIR=/var/tmp/tobechange
 
@@ -252,8 +252,8 @@ configure_wireguard_server() {
 
   echo $HOST_KEYS >/tmp/vpn-minute-known_host
 
-  scp -i /tmp/toberandom -o UserKnownHostsFile=/tmp/vpn-minute-known_host -o ConnectionAttempts=$VPNM_SSH_TIMEOUT /tmp/toberandom-wireguard-server-config ubuntu@$WIREGUARD_SERVER_PUBLIC_IP:~/wg0.conf
-  ssh -i /tmp/toberandom -o UserKnownHostsFile=/tmp/vpn-minute-known_host -o ConnectionAttempts=$VPNM_SSH_TIMEOUT ubuntu@$WIREGUARD_SERVER_PUBLIC_IP <<'ENDSSH'
+  scp -i /tmp/toberandom -o UserKnownHostsFile=/tmp/vpn-minute-known_host -o ConnectionAttempts=$VPNM_SSH_CONNECTION_ATTEMPTS /tmp/toberandom-wireguard-server-config ubuntu@$WIREGUARD_SERVER_PUBLIC_IP:~/wg0.conf
+  ssh -i /tmp/toberandom -o UserKnownHostsFile=/tmp/vpn-minute-known_host -o ConnectionAttempts=$VPNM_SSH_CONNECTION_ATTEMPTS ubuntu@$WIREGUARD_SERVER_PUBLIC_IP <<'ENDSSH'
 set -e 
 sudo apt-get update
 sudo apt-get upgrade -y
