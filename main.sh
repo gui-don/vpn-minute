@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
 export VPNM_PROVIDER=aws
-export VPNM_SSH_CONNECTION_ATTEMPTS=30
 export VPNM_HOME=/tmp/vpnm
+export VPNM_SSH_CONNECTION_ATTEMPTS=30
 export VPNM_SSH_KEY_FILE=$VPNM_HOME/id_rsa
 export VPNM_SSH_KNOWN_HOST_FILE=$VPNM_HOME/known_host
 export VPNM_WG_SERVER_CONFIG_FILE=$VPNM_HOME/wg0_server.conf
 export VPNM_WG_CLIENT_CONFIG_FILE=$VPNM_HOME/wg0_client.conf
+export VPNM_APPLICATION_NAME="vpn-minute"
 
 export TF_DATA_DIR=$VPNM_HOME
 
@@ -18,7 +19,6 @@ if ! [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
   export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY
 fi
 
-PROGRAM_NAME="vpn-minute"
 
 set -e
 #set -x
@@ -89,9 +89,9 @@ check_arguments() {
   while test $# -gt 0; do
     case "$1" in
     -h | --help)
-      echo "$PROGRAM_NAME"
+      echo "$VPNM_APPLICATION_NAME"
       echo " "
-      echo "$PROGRAM_NAME [options] start|stop|status"
+      echo "$VPNM_APPLICATION_NAME [options] start|stop|status"
       echo " "
       echo "options:"
       echo "-h, --help                show brief help"
@@ -203,12 +203,12 @@ run_terraform() {
   case $VPNM_PROVIDER in
   aws)
     HOME=$VPNM_HOME terraform init terraform/aws
-    HOME=$VPNM_HOME terraform apply -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "allow_ssh=true" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
+    HOME=$VPNM_HOME terraform apply -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=true" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
     export VPNM_WG_SERVER_PUBLIC_IP=$(HOME=$VPNM_HOME terraform output -json | jq '.public_ip.value' | sed s/\"//g)
     export VPNM_WG_SERVER_INSTANCE_ID=$(HOME=$VPNM_HOME terraform output -json | jq '.instance_id.value' | sed s/\"//g)
     generate_wireguard_configuration
     configure_wireguard_server
-    HOME=$VPNM_HOME terraform apply -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "allow_ssh=false" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
+    HOME=$VPNM_HOME terraform apply -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=false" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
     ;;
   *)
     echo "Error: $VPNM_PROVIDER is not supported yet." >&2
