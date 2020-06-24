@@ -4,6 +4,7 @@ PROGRAM_NAME="vpn-minute"
 
 export VPNM_PROVIDER=aws
 export VPNM_SSH_CONNECTION_ATTEMPTS=30
+export VPNM_WG_CLIENT_CONFIG_FILE=$VPNM_HOME/wg0_client.conf
 
 export TF_DATA_DIR=/var/tmp/tobechange
 
@@ -272,13 +273,31 @@ ENDSSH
 }
 
 start_client_wireguard() {
-  sudo wg-quick up /tmp/wg0.conf
+  echo "Start wireguard…"
+
+  if [ ! -f $VPNM_WG_CLIENT_CONFIG_FILE ]; then
+    echo "Error: cannot start wireguard client. No such file: $VPNM_WG_CLIENT_CONFIG_FILE." >&2
+  fi
+
+  local wg_is_up=$(sudo -E wg show $VPNM_WG_CLIENT_CONFIG_FILE >& /dev/null && echo 1 || echo 0)
+  if [ $wg_is_up -eq 0 ]; then
+    sudo -E wg-quick up $VPNM_WG_CLIENT_CONFIG_FILE
+    echo "-> wireguard started."
+  else
+    echo "-> wireguard already runnning."
+  fi
 }
 
 stop_client_wireguard() {
-  if [ -f /tmp/wg0.conf ]; then
-    sudo wg-quick down /tmp/wg0.conf
+  echo "Stop wireguard…"
+
+  local wg_is_up=$(sudo -E wg show $VPNM_WG_CLIENT_CONFIG_FILE >& /dev/null && echo 1 || echo 0)
+  if [ -f $VPNM_WG_CLIENT_CONFIG_FILE -a $wg_is_up -eq 1 ]; then
+    sudo -E wg-quick down $VPNM_WG_CLIENT_CONFIG_FILE
+    echo "-> wireguard stopped."
   fi
+
+  echo "-> wireguard not runnning."
 }
 
 ####
