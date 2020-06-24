@@ -31,10 +31,7 @@ delete_home() {
 }
 
 check_requirments() {
-  if ! [ -x "$(command -v ssh-keygen)" ]; then
-    echo "Error: openssh-client is not installed." >&2
-    exit 100
-  fi
+  echo -e "Check requirments…"
 
   if ! [ -x "$(command -v scp)" ]; then
     echo "Error: scp is not installed." >&2
@@ -53,12 +50,22 @@ check_requirments() {
 
   if ! [ -x "$(command -v jq)" ]; then
     echo "Error: jq is not installed." >&2
-    exit 100
+    exit 103
   fi
 
   if ! [ -x "$(command -v aws)" ]; then
     echo "Error: aws-cli is not installed." >&2
-    exit 100
+    exit 104
+  fi
+
+  if ! [ -x "$(command -v ssh-keygen)" ]; then
+    echo "Error: openssh-client is not installed." >&2
+    exit 105
+  fi
+
+  if ! [ -x "$(command -v sudo)" ]; then
+    echo "Error: is not installed." >&2
+    exit 106
   fi
 
   if [ -z "$1" ]; then
@@ -148,7 +155,7 @@ check_arguments() {
 ####
 
 create_ssh_key() {
-  echo "Generate temporary ssh key..."
+  echo "Generate temporary SSH key..."
 
   if [ ! -f /tmp/toberandom ]; then
     ssh-keygen -t rsa -b 4096 -f /tmp/toberandom -C "vpn-minute" -q -N ""
@@ -200,7 +207,7 @@ run_terraform() {
     ;;
   esac
 
-  echo -e "-> infratructure deployed."
+  echo -e "-> infrastructure deployed."
 }
 
 destroy_terraform() {
