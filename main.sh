@@ -19,7 +19,6 @@ if ! [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
   export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY
 fi
 
-
 set -e
 #set -x
 
