@@ -14,6 +14,22 @@ export AWS_SECRET_ACCESS_KEY=$AWS_ACCESS_KEY
 set -e
 #set -x
 
+configure_home() {
+  echo -e "Configure home…"
+
+  mkdir -p $VPNM_HOME
+
+  echo -e "-> Home configured."
+}
+
+delete_home() {
+  echo -e "Delete home…"
+
+  rm -rf $VPNM_HOME
+
+  echo -e "-> Home deleted."
+}
+
 check_requirments() {
   if ! [ -x "$(command -v ssh-keygen)" ]; then
     echo "Error: openssh-client is not installed." >&2
@@ -307,6 +323,7 @@ stop_client_wireguard() {
 main() {
   check_requirments "$@"
   check_arguments "$@"
+  configure_home
 
   case $ACTION in
   start)
@@ -320,6 +337,7 @@ main() {
     destroy_terraform
     delete_wireguard_configuration
     delete_ssh_key
+    delete_home
     ;;
   status)
     echo "Not implemented yet."
