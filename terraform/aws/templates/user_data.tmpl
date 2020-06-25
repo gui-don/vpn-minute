@@ -28,7 +28,6 @@ sudo mkdir -p /etc/wireguard
 sudo bash -c "echo \"$VPNM_BASE64_WG_SERVER_CONFIG\" | base64 -d > /etc/wireguard/wg0.conf"
 sudo chown -R root:root /etc/wireguard
 sudo chmod -R og-rwx /etc/wireguard/
-sudo systemctl start wg-quick@wg0.service
 sudo systemctl enable wg-quick@wg0.service
 
 ####
