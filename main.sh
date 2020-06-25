@@ -55,6 +55,11 @@ check_requirements() {
     exit 101
   fi
 
+  if ! [ -x "$(command -v drill)" ]; then
+    print_error "\e[1mdrill\e[22m command is not available in your system."
+    exit 101
+  fi
+
   if ! [ -x "$(command -v base64)" ]; then
     print_error "\e[1mbase64\e[22m command is not available in your system."
     exit 101
@@ -284,8 +289,37 @@ delete_wireguard_configurations() {
   echo -e "-> wireguard configuration deleted."
 }
 
+wait_vpn_connectivity() {
+  echo "Wait for VPN to be ready..."
+
+  local ip_check_host_ips=$(drill -D -4 A ifconfig.me | grep -Po '([\.0-9]{2,5}){3}$' | sed '$ d' | sed 's/$/\/32/' | paste -sd ",")
+
+  stop_client_wireguard
+  start_client_wireguard "$ip_check_host_ips"
+
+  while ! is_connected; do
+    sleep 3
+  done
+
+  stop_client_wireguard
+
+  echo -e "-> VPN is ready."
+}
+
+is_connected() {
+  if [ "$(curl -s --max-time 1 ifconfig.me/ip)" == "$VPNM_WG_SERVER_PUBLIC_IP" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 start_client_wireguard() {
   echo "Start wireguard…"
+
+  local route=${1:-0.0.0.0/0}
+
+  sed -i "s|AllowedIPs \= .*|AllowedIPs \= $route|" $VPNM_WG_CLIENT_CONFIG_FILE
 
   if [ ! -f $VPNM_WG_CLIENT_CONFIG_FILE ]; then
     print_error "Error: cannot start wireguard client. No such file: \e[1m$VPNM_WG_CLIENT_CONFIG_FILE\e[22m."
@@ -307,7 +341,7 @@ stop_client_wireguard() {
   if [ $wg_is_up -eq 1 ]; then
     if [ ! -f $VPNM_WG_CLIENT_CONFIG_FILE ]; then
       umask 066
-      sudo wg showconf wg0_client > $VPNM_WG_CLIENT_CONFIG_FILE
+      sudo wg showconf wg0_client >$VPNM_WG_CLIENT_CONFIG_FILE
     fi
 
     sudo -E wg-quick down $VPNM_WG_CLIENT_CONFIG_FILE
@@ -397,10 +431,16 @@ destroy_infrastructure() {
 check_status() {
   echo "Check wireguard server status"
 
+  printf "Connection: "
+  if is_connected ; then
+    echo $VPNM_WG_SERVER_PUBLIC_IP
+  else
+    echo "not connected"
+  fi
+
   if [ "$VPNM_ALLOW_SSH" = true ]; then
-    ssh -i $VPNM_SSH_KEY_FILE -o UserKnownHostsFile=$VPNM_SSH_KNOWN_HOST_FILE -o ConnectionAttempts=30 $VPNM_SSH_USER@$VPNM_WG_SERVER_PUBLIC_IP <<'ENDSSH'
-      echo test
-ENDSSH
+    printf "SSH: "
+    ssh -i $VPNM_SSH_KEY_FILE -o UserKnownHostsFile=$VPNM_SSH_KNOWN_HOST_FILE -o ConnectionAttempts=10 $VPNM_SSH_USER@$VPNM_WG_SERVER_PUBLIC_IP echo 'SSH is working'
   fi
 
   echo "-> wireguard server status checked."
@@ -424,6 +464,9 @@ main() {
     fi
     deploy_infrastructure
     generate_wireguard_client_configuration
+    if ! is_connected; then
+      wait_vpn_connectivity
+    fi
     start_client_wireguard
     check_status
     if [ "$VPNM_ALLOW_SSH" = true ]; then
@@ -444,7 +487,7 @@ main() {
     exit 0
     ;;
   status)
-    echo -e "\e[1mstatus\e[22m is not implemented yet."
+    print_warn "\e[1mstatus\e[22m is not implemented yet."
     ;;
   "")
     display_help
