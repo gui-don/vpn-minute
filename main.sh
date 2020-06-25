@@ -346,7 +346,7 @@ deploy_infrastructure() {
     echo "Waiting for SSH..."
 
     if [ "$VPNM_ALLOW_SSH" = true ]; then
-      while [ $(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.ssh_known_hosts.value' | sed s/\"//g) == "IN PROGRESS..." ]; do
+      while [ "$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.ssh_known_hosts.value' | sed s/\"//g)" == "IN PROGRESS..." ]; do
         HOME=$VPNM_HOME terraform refresh -state=$TF_STATE_FILE -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
         sleep 5
       done
