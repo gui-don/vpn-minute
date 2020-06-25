@@ -10,8 +10,8 @@ output "uuid" {
   value = local.uuid
 }
 
-output "known_hosts" {
-  value = var.allow_ssh ? data.aws_ssm_parameter.this_known_hosts.*.value[0] : ""
+output "ssh_known_hosts" {
+  value = var.allow_ssh ? data.aws_ssm_parameter.this_known_hosts.*.value[0] : "not applicable"
 }
 
 output "region" {

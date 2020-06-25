@@ -6,7 +6,7 @@ export VPNM_HOME="/tmp/vpnm"
 export VPNM_ALLOW_SSH=false
 export VPNM_SSH_USER="ubuntu"
 export VPNM_SSH_KEY_FILE="$VPNM_HOME/id_rsa"
-export VPNM_SSH_KNOWN_HOST_FILE="$VPNM_HOME/known_host"
+export VPNM_SSH_KNOWN_HOST_FILE="$VPNM_HOME/known_hosts"
 export VPNM_WG_CLIENT_CONNECTION_NAME="wg0_client"
 export VPNM_WG_SERVER_CONFIG_FILE="$VPNM_HOME/wg0_server.conf"
 export VPNM_WG_CLIENT_CONFIG_FILE="$VPNM_HOME/$VPNM_WG_CLIENT_CONNECTION_NAME.conf"
@@ -346,7 +346,7 @@ deploy_infrastructure() {
     echo "Waiting for SSH..."
 
     if [ "$VPNM_ALLOW_SSH" = true ]; then
-      while [ $(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.known_hosts.value' | sed s/\"//g) == "IN PROGRESS..." ]; do
+      while [ $(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.ssh_known_hosts.value' | sed s/\"//g) == "IN PROGRESS..." ]; do
         HOME=$VPNM_HOME terraform refresh -state=$TF_STATE_FILE -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
         sleep 5
       done
@@ -358,7 +358,7 @@ deploy_infrastructure() {
     export VPNM_WG_SERVER_INSTANCE_ID=$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.instance_id.value' | sed s/\"//g)
 
     if [ "$VPNM_ALLOW_SSH" = true ]; then
-      HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq -r '.known_hosts.value' | sed s/\"//g | base64 -d >$VPNM_SSH_KNOWN_HOST_FILE
+      HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq -r '.ssh_known_hosts.value' | sed s/\"//g | base64 -d >$VPNM_SSH_KNOWN_HOST_FILE
     fi
     ;;
   *)
