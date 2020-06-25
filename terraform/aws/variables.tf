@@ -45,6 +45,11 @@ variable "ami_id" {
   default     = ""
 }
 
+variable "base64_vpn_server_config" {
+  description = "VPN server configuration encoded in base64"
+  type        = string
+}
+
 variable "application_name" {
   description = "Name of the application"
   default     = ""
@@ -68,4 +73,5 @@ variable "public_key" {
 variable "allow_ssh" {
   description = "Allow inbound ssh"
   type        = bool
+  default     = false
 }

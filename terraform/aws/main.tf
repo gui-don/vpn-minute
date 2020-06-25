@@ -1,52 +1,37 @@
 locals {
   is_default_vpc   = "" == var.vpc_id
   is_defaut_ami_id = "" == var.ami_id
-  prefix           = "vpn-minute"
+  prefix           = "vpnm"
+  uuid             = var.uuid != "" ? var.uuid : random_string.this.result
+  name             = "${local.prefix}-${local.uuid}"
+  tags = {
+    managed-by  = "Terraform"
+    application = var.application_name
+    uuid        = local.uuid
+  }
 }
 
 resource "random_string" "this" {
-  length  = 6
+  length  = 8
   special = false
   upper   = false
 }
 
-data "aws_caller_identity" "current" {}
-
-data "aws_ami" "ubuntu" {
-  count       = local.is_defaut_ami_id ? 1 : 0
-  most_recent = true
-  owners      = ["099720109477"]
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
-data "aws_vpc" "default" {
-  count   = local.is_default_vpc ? 1 : 0
-  default = true
-}
-
-data "aws_subnet_ids" "this" {
-  count  = "" == var.subnet_id ? 1 : 0
-  vpc_id = concat(data.aws_vpc.default.*.id, [""])[0]
-}
+####
+# Security Group
+####
 
 resource "aws_security_group" "this" {
-  name        = "${local.prefix}-sg-${random_string.this.result}"
-  description = "Security group for wireguard instance ${random_string.this.result}"
+  name        = "sgs-${local.name}"
+  description = "${var.application_name} security group for instance ${local.uuid}"
   vpc_id      = "" == var.vpc_id ? data.aws_vpc.default.0.id : var.vpc_id
 
-  tags = {
-    Name      = "${local.prefix}-sg-${random_string.this.result}"
-    Terraform = true
-  }
+  tags = merge(
+    local.tags,
+    {
+      Name = "sgs-${local.name}"
+    }
+  )
 }
 
 resource "aws_security_group_rule" "this_ingress" {
@@ -80,13 +65,24 @@ resource "aws_security_group_rule" "this_egress" {
   security_group_id = aws_security_group.this.id
 }
 
+####
+# Compute
+####
+
 resource "aws_key_pair" "this" {
-  key_name   = "${local.prefix}-${random_string.this.result}"
+  count = var.allow_ssh ? 1 : 0
+
+  key_name   = local.name
   public_key = var.public_key
 }
 
 resource "aws_launch_template" "this" {
-  name = "${local.prefix}-${random_string.this.result}"
+  name = local.name
+
+  image_id      = local.is_default_vpc ? data.aws_ami.ubuntu.0.id : var.ami_id
+  instance_type = var.instance_type
+
+  user_data = base64encode(replace(data.template_file.user_data.rendered, "\r\n", "\n"))
 
   network_interfaces {
     security_groups             = [aws_security_group.this.id]
@@ -105,19 +101,30 @@ resource "aws_launch_template" "this" {
     }
   }
 
-  key_name = aws_key_pair.this.key_name
+  dynamic "iam_instance_profile" {
+    for_each = var.allow_ssh ? [1] : []
 
-  tags = {
-    Name      = "${local.prefix}-${random_string.this.result}"
-    Terraform = true
+    content {
+      name = element(aws_iam_instance_profile.this.*.name, 0)
+    }
   }
+
+  key_name = var.allow_ssh ? element(aws_key_pair.this.*.key_name, 0) : null
 
   monitoring {
     enabled = true
   }
 
-  image_id      = local.is_default_vpc ? data.aws_ami.ubuntu.0.id : var.ami_id
-  instance_type = var.instance_type
+  tags = merge(
+    local.tags,
+    {
+      Name = "ltp-${local.name}"
+    }
+  )
+
+  lifecycle {
+    ignore_changes = [user_data]
+  }
 }
 
 resource "aws_spot_fleet_request" "this" {
@@ -140,11 +147,120 @@ resource "aws_spot_fleet_request" "this" {
   lifecycle {
     ignore_changes = [valid_until]
   }
+
+  tags = merge(
+    local.tags,
+    {
+      Name = "sfr-${local.name}"
+    }
+  )
 }
 
-data "aws_instance" "this" {
-  filter {
-    name   = "tag:aws:ec2spot:fleet-request-id"
-    values = [aws_spot_fleet_request.this.id]
+####
+# SSM Parameter
+####
+
+resource "aws_ssm_parameter" "this_known_hosts" {
+  count  = var.allow_ssh ? 1 : 0
+
+  name        = "/${local.prefix}/${local.uuid}/known-hosts"
+  description = "${var.application_name} server ${local.uuid} known hosts in base64."
+  type        = "String"
+  value       = "IN PROGRESS..."
+  overwrite   = true
+
+  tags = merge(
+    local.tags,
+    {
+      Name = "ssm-${local.name}"
+    }
+  )
+
+  lifecycle {
+    ignore_changes = [value]
   }
+}
+
+####
+# IAM Policy/Role/Instance Profile
+####
+
+data "aws_iam_policy_document" "this" {
+  count  = var.allow_ssh ? 1 : 0
+
+  statement {
+    sid = "VPNMAllowReadSSMParameterAccess"
+
+    effect = "Allow"
+
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:PutParameter",
+    ]
+
+    resources = formatlist(
+      "arn:aws:ssm:*:%s:parameter/%s/%s/known-hosts",
+      data.aws_caller_identity.current.account_id,
+      local.prefix,
+      local.uuid,
+    )
+  }
+}
+
+data "aws_iam_policy_document" "sts_instance" {
+  count  = var.allow_ssh ? 1 : 0
+
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type = "Service"
+      identifiers = [
+        "ec2.amazonaws.com"
+      ]
+    }
+  }
+}
+
+resource "aws_iam_policy" "this_instance_profile" {
+  count  = var.allow_ssh ? 1 : 0
+
+  name        = "plc-${local.name}"
+  path        = "/"
+  policy      = element(concat(data.aws_iam_policy_document.this.*.json, [""]), 0)
+  description = "${var.application_name} read/write policy to get access to ssm-${local.name} SSM parameters."
+}
+
+resource "aws_iam_role" "this_instance_profile" {
+  count  = var.allow_ssh ? 1 : 0
+
+  name = "rol-${local.name}"
+
+  description        = "${var.application_name} role for ipr-${local.name} instance profile."
+  path               = "/"
+  assume_role_policy = data.aws_iam_policy_document.sts_instance.*.json[0]
+
+  tags = merge(
+    local.tags,
+    {
+      Name = "rol-${local.name}"
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "this_instance_profile" {
+  count  = var.allow_ssh ? 1 : 0
+
+  role       = element(aws_iam_role.this_instance_profile.*.id, 0)
+  policy_arn = element(aws_iam_policy.this_instance_profile.*.arn, 0)
+}
+
+resource "aws_iam_instance_profile" "this" {
+  count  = var.allow_ssh ? 1 : 0
+
+  name = "ipr-${local.name}"
+  path = "/"
+
+  roles = [element(aws_iam_role.this_instance_profile.*.id, 0)]
 }
