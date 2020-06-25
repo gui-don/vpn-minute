@@ -312,9 +312,9 @@ stop_client_wireguard() {
 
     sudo -E wg-quick down $VPNM_WG_CLIENT_CONFIG_FILE
     echo "-> wireguard stopped."
+  else
+    echo "-> wireguard not runnning."
   fi
-
-  echo "-> wireguard not runnning."
 }
 
 ####
