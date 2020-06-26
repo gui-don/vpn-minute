@@ -140,7 +140,7 @@ display_help() {
   echo "-p, --provider PROVIDER   set the provider to use"
   echo "-r, --region REGION       set the region to use, see below"
   echo "--ssh                     allows SSH connection to the $VPNM_APPLICATION_NAME server"
-  echo "--os-name                 what underlying OS to use, supported: ubuntu, alpine"
+  echo "--os                      what underlying OS to use, supported: ubuntu, alpine"
   echo " "
   echo "== Provider $VPNM_PROVIDER =="
   echo "Available regions:        "$(get_available_regions)
