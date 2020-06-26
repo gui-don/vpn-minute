@@ -72,8 +72,15 @@ resource "aws_security_group_rule" "this_egress" {
 resource "aws_key_pair" "this" {
   count = var.allow_ssh ? 1 : 0
 
-  key_name   = local.name
+  key_name   = "ssh-${local.name}"
   public_key = var.public_key
+
+  tags = merge(
+    local.tags,
+    {
+      Name = "ssh-${local.name}"
+    }
+  )
 }
 
 resource "aws_launch_template" "this" {
@@ -111,8 +118,26 @@ resource "aws_launch_template" "this" {
 
   key_name = var.allow_ssh ? element(aws_key_pair.this.*.key_name, 0) : null
 
-  monitoring {
-    enabled = true
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = merge(
+      local.tags,
+      {
+        Name = "ec2-${local.name}"
+      }
+    )
+  }
+
+  tag_specifications {
+    resource_type = "volume"
+
+    tags = merge(
+      local.tags,
+      {
+        Name = "ebs-${local.name}"
+      }
+    )
   }
 
   tags = merge(
