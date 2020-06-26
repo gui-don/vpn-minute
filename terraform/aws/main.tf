@@ -124,7 +124,7 @@ resource "aws_launch_template" "this" {
     tags = merge(
       local.tags,
       {
-        Name = "ebs-${local.name}"
+        Name = "ec2-${local.name}"
       }
     )
   }
