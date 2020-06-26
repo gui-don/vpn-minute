@@ -153,7 +153,7 @@ resource "aws_launch_template" "this" {
 }
 
 resource "aws_spot_fleet_request" "this" {
-  iam_fleet_role  = aws_iam_role.this_spotfleet.arn
+  iam_fleet_role  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/spotfleet.amazonaws.com/AWSServiceRoleForEC2SpotFleet"
   target_capacity = 1
   valid_until     = timeadd(timestamp(), "86400h")
 
@@ -209,39 +209,6 @@ resource "aws_ssm_parameter" "this_known_hosts" {
 ####
 # IAM Policy/Role/Instance Profile
 ####
-
-data "aws_iam_policy_document" "spotfleet" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type = "Service"
-      identifiers = [
-        "spotfleet.amazonaws.com"
-      ]
-    }
-  }
-}
-
-resource "aws_iam_role" "this_spotfleet" {
-  name = "rol-spf-${local.name}"
-
-  description        = "${var.application_name} role for sfr-${local.name}."
-  path               = "/"
-  assume_role_policy = data.aws_iam_policy_document.spotfleet.json
-
-  tags = merge(
-    local.tags,
-    {
-      Name = "rol-spf-${local.name}"
-    }
-  )
-}
-
-resource "aws_iam_role_policy_attachment" "this_spotfleet" {
-  role       = aws_iam_role.this_spotfleet.id
-  policy_arn = "AmazonEC2SpotFleetTaggingRole"
-}
 
 data "aws_iam_policy_document" "this" {
   count  = var.allow_ssh ? 1 : 0
