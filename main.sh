@@ -162,7 +162,7 @@ check_arguments() {
       set -x
       shift
       ;;
-    --os-name)
+    --os)
       shift
       if [ "$1" != "alpine" ] && [ "$1" != "ubuntu" ]; then
         print_warn "Unsupported OS."
