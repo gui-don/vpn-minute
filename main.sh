@@ -11,7 +11,7 @@ export VPNM_WG_CLIENT_CONFIG_FILE="$VPNM_HOME/wg0_client.conf"
 export VPNM_WG_TEST_CONFIG_FILE="$VPNM_HOME/wg0_test.conf"
 
 export VPNM_OS="ubuntu"
-export VPNM_OS_POSTROUTING_INTERFACE="eth0"
+export VPNM_OS_POSTROUTING_INTERFACE="ens5"
 
 export VPNM_ALLOW_SSH=false
 export VPNM_SSH_USER="$VPNM_OS"
@@ -171,8 +171,8 @@ check_arguments() {
       if test $# -gt 0 ; then
         export VPNM_OS=$1
         export VPNM_SSH_USER=$1
-        if [ "$1" == "ubuntu" ]; then
-          VPNM_OS_POSTROUTING_INTERFACE="ens5"
+        if [ "$1" == "alpine" ]; then
+          VPNM_OS_POSTROUTING_INTERFACE="eth0"
         fi
       else
         print_warn "No OS name specified."
@@ -401,7 +401,6 @@ stop_client_wireguard() {
 
   local wg_is_up=$(sudo -E wg show "$configuration_file" >&/dev/null 2> /dev/null && echo 1 || echo 0)
   if [ -f "$configuration_file" ] && [ $wg_is_up -eq 1 ]; then
-    echo "GOING THERE"
     sudo -E wg-quick down "$configuration_file"
     print_message "✔ wireguard stopped."
   else
