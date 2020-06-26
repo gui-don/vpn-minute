@@ -27,23 +27,23 @@ fi
 set -e
 
 configure_home() {
-  echo -e "Configure home…"
+  print_message "Configure home…"
 
   mkdir -p $VPNM_HOME
 
-  echo -e "-> Home configured."
+  print_message "✔ Home configured."
 }
 
 delete_home() {
-  echo -e "Delete home…"
+  print_message "Delete home…"
 
   rm -rf $VPNM_HOME
 
-  echo -e "-> Home deleted."
+  print_message "✔ Home deleted."
 }
 
 check_requirements() {
-  echo -e "Check requirements…"
+  print_message "Check requirements…"
 
   if [ "$VPNM_ALLOW_SSH" = true ] && ! [ -x "$(command -v ssh)" ]; then
     print_error "\e[1mssh\e[22m command is not available in your system."
@@ -95,15 +95,19 @@ check_requirements() {
     exit 1
   fi
 
-  echo -e "-> Requirements checked."
+  print_message "✔ Requirements checked."
+}
+
+print_message() {
+  echo -e " 🠒 $1"
 }
 
 print_error() {
-  echo -e "\e[91mError: $1\e[39m" >&2
+  echo -e "\e[91m 🗶 $1\e[39m" >&2
 }
 
 print_warn() {
-  echo -e "\e[93m$1\e[0m" >&2
+  echo -e "\e[93m ❕ $1\e[0m" >&2
 }
 
 display_help() {
@@ -188,31 +192,31 @@ check_arguments() {
 ####
 
 display_ssh_command() {
-  echo -e "To connect to the $VPNM_APPLICATION_NAME server with SSH, use:"
+  print_message "To connect to the $VPNM_APPLICATION_NAME server with SSH, use:"
 
-  echo -e "  $ ssh -i $VPNM_SSH_KEY_FILE -o UserKnownHostsFile=$VPNM_SSH_KNOWN_HOST_FILE $VPNM_SSH_USER@$VPNM_WG_SERVER_PUBLIC_IP"
+  print_message "  $ ssh -i $VPNM_SSH_KEY_FILE -o UserKnownHostsFile=$VPNM_SSH_KNOWN_HOST_FILE $VPNM_SSH_USER@$VPNM_WG_SERVER_PUBLIC_IP"
 }
 
 create_ssh_key() {
-  echo "Generate SSH key..."
+  print_message "Generate SSH key..."
 
   if [ ! -f $VPNM_SSH_KEY_FILE ]; then
     ssh-keygen -t rsa -b 4096 -f $VPNM_SSH_KEY_FILE -C "$VPNM_APPLICATION_NAME" -q -N ""
 
-    echo -e "-> SSH key generated."
+    print_message "✔ SSH key generated."
   else
-    echo -e "-> SSH key already generated."
+    print_message "✔ SSH key already generated."
   fi
 
   export VPNM_SSH_PUBLIC_KEY=$(ssh-keygen -y -f $VPNM_SSH_KEY_FILE)
 }
 
 delete_ssh_key() {
-  echo "Delete SSH key..."
+  print_message "Delete SSH key..."
 
   rm -f $VPNM_SSH_KEY_FILE $VPNM_SSH_KEY_FILE.pub
 
-  echo -e "-> SSH key deleted."
+  print_message "✔ SSH key deleted."
 }
 
 ####
@@ -220,27 +224,27 @@ delete_ssh_key() {
 ####
 
 generate_wireguard_keys() {
-  echo "Generate wireguard keys..."
+  print_message "Generate wireguard keys..."
 
   if [ ! -f "$VPNM_WG_SERVER_CONFIG_FILE" ]; then
     export VPNM_WG_SERVER_KEY=$(wg genkey)
     export VPNM_WG_SERVER_PUBLIC_KEY=$(echo "$VPNM_WG_SERVER_KEY" | wg pubkey)
-    echo -e "-> wireguard server keys generated."
+    print_message "✔ wireguard server keys generated."
   else
-    echo -e "-> wireguard server keys already generated."
+    print_message "✔ wireguard server keys already generated."
   fi
 
   if [ ! -f "$VPNM_WG_CLIENT_CONFIG_FILE" ]; then
     export VPNM_WG_CLIENT_KEY=$(wg genkey)
     export VPNM_WG_CLIENT_PUBLIC_KEY=$(echo "$VPNM_WG_CLIENT_KEY" | wg pubkey)
-    echo -e "-> wireguard client keys generated."
+    print_message "✔ wireguard client keys generated."
   else
-    echo -e "-> wireguard client keys already generated."
+    print_message "✔ wireguard client keys already generated."
   fi
 }
 
 generate_wireguard_client_configuration() {
-  echo "Generate wireguard client configuration..."
+  print_message "Generate wireguard client configuration..."
 
   if [ ! -f "$VPNM_WG_CLIENT_CONFIG_FILE" ]; then
     VPNM_WG_CLIENT_CONFIG="[Interface]\\n\
@@ -253,14 +257,14 @@ AllowedIPs = 0.0.0.0/0\\n\
 Endpoint = $VPNM_WG_SERVER_PUBLIC_IP:51820"
     umask 066
     echo -e "$VPNM_WG_CLIENT_CONFIG" >$VPNM_WG_CLIENT_CONFIG_FILE
-    echo -e "-> wireguard client configuration generated."
+    print_message "✔ wireguard client configuration generated."
   else
-    echo -e "-> wireguard client configuration already generated."
+    print_message "✔ wireguard client configuration already generated."
   fi
 }
 
 generate_wireguard_server_configuration() {
-  echo "Generate wireguard client configuration..."
+  print_message "Generate wireguard client configuration..."
 
   if [ ! -f "$VPNM_WG_SERVER_CONFIG_FILE" ]; then
     VPNM_WG_SERVER_CONFIG="[Interface]\\n\
@@ -274,23 +278,23 @@ PublicKey = $VPNM_WG_CLIENT_PUBLIC_KEY\\n\
 AllowedIPs = 192.168.2.2/32"
     umask 066
     echo -e "$VPNM_WG_SERVER_CONFIG" >$VPNM_WG_SERVER_CONFIG_FILE
-    echo -e "-> wireguard server configuration generated."
+    print_message "✔ wireguard server configuration generated."
   else
-    echo -e "-> wireguard server configuration already generated."
+    print_message "✔ wireguard server configuration already generated."
   fi
 }
 
 delete_wireguard_configurations() {
-  echo "Delete wireguard configuration..."
+  print_message "Delete wireguard configuration..."
 
   rm -f $VPNM_WG_CLIENT_CONFIG_FILE
   rm -f $VPNM_WG_SERVER_CONFIG_FILE
 
-  echo -e "-> wireguard configuration deleted."
+  print_message "✔ wireguard configuration deleted."
 }
 
 wait_vpn_connectivity() {
-  echo "Wait for VPN to be ready..."
+  print_message " ### Wait for VPN to be ready..."
 
   local ip_check_host_ips=$(drill -D -4 A ifconfig.me | grep -Po '([\.0-9]{2,5}){3}$' | sed '$ d' | sed 's/$/\/32/' | paste -sd ",")
 
@@ -303,7 +307,7 @@ wait_vpn_connectivity() {
 
   stop_client_wireguard
 
-  echo -e "-> VPN is ready."
+  print_message " ### ✔ VPN is ready."
 }
 
 is_connected() {
@@ -315,7 +319,7 @@ is_connected() {
 }
 
 start_client_wireguard() {
-  echo "Start wireguard…"
+  print_message "Start wireguard…"
 
   local route=${1:-0.0.0.0/0}
 
@@ -328,14 +332,14 @@ start_client_wireguard() {
   local wg_is_up=$(sudo -E wg show $VPNM_WG_CLIENT_CONNECTION_NAME >&/dev/null && echo 1 || echo 0)
   if [ $wg_is_up -eq 0 ]; then
     sudo -E wg-quick up $VPNM_WG_CLIENT_CONFIG_FILE
-    echo "-> wireguard started."
+    print_message "✔ wireguard started."
   else
-    echo "-> wireguard already runnning."
+    print_message "✔ wireguard already running."
   fi
 }
 
 stop_client_wireguard() {
-  echo "Stop wireguard…"
+  print_message "Stop wireguard…"
 
   local wg_is_up=$(sudo -E wg show $VPNM_WG_CLIENT_CONNECTION_NAME >&/dev/null && echo 1 || echo 0)
   if [ $wg_is_up -eq 1 ]; then
@@ -345,9 +349,9 @@ stop_client_wireguard() {
     fi
 
     sudo -E wg-quick down $VPNM_WG_CLIENT_CONFIG_FILE
-    echo "-> wireguard stopped."
+    print_message "✔ wireguard stopped."
   else
-    echo "-> wireguard not runnning."
+    print_message "✔ wireguard not running."
   fi
 }
 
@@ -368,7 +372,7 @@ get_available_regions() {
 }
 
 deploy_infrastructure() {
-  echo "Deploy infrastructure..."
+  print_message "Deploy infrastructure..."
 
   mkdir -p $TF_DATA_DIR
 
@@ -377,7 +381,7 @@ deploy_infrastructure() {
     HOME=$VPNM_HOME terraform init terraform/aws
     HOME=$VPNM_HOME terraform apply -state=$TF_STATE_FILE -state-out=$TF_STATE_FILE -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
 
-    echo "Waiting for SSH..."
+    print_message "Waiting for SSH..."
 
     if [ "$VPNM_ALLOW_SSH" = true ]; then
       while [ "$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.ssh_known_hosts.value' | sed s/\"//g)" == "IN PROGRESS..." ]; do
@@ -386,7 +390,7 @@ deploy_infrastructure() {
       done
     fi
 
-    echo -e "-> SSH ready."
+    print_message -e "✔ SSH ready."
 
     export VPNM_WG_SERVER_PUBLIC_IP=$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.public_ip.value' | sed s/\"//g)
     export VPNM_WG_SERVER_INSTANCE_ID=$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.instance_id.value' | sed s/\"//g)
@@ -401,11 +405,11 @@ deploy_infrastructure() {
     ;;
   esac
 
-  echo -e "-> infrastructure deployed."
+  print_message "✔ infrastructure deployed."
 }
 
 destroy_infrastructure() {
-  echo "Destroy infrastructure..."
+  print_message "Destroy infrastructure..."
 
   mkdir -p $TF_DATA_DIR
 
@@ -425,11 +429,11 @@ destroy_infrastructure() {
 
   rm -rf $TF_DATA_DIR
 
-  echo -e "-> infrastructure destroyed."
+  print_message "✔ infrastructure destroyed."
 }
 
 check_status() {
-  echo "Check wireguard server status"
+  print_message "Check wireguard server status"
 
   printf "Connection: "
   if is_connected ; then
@@ -443,7 +447,7 @@ check_status() {
     ssh -i $VPNM_SSH_KEY_FILE -o UserKnownHostsFile=$VPNM_SSH_KNOWN_HOST_FILE -o ConnectionAttempts=10 $VPNM_SSH_USER@$VPNM_WG_SERVER_PUBLIC_IP echo 'SSH is working'
   fi
 
-  echo "-> wireguard server status checked."
+  print_message "✔ wireguard server status checked."
 }
 
 ####
