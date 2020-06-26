@@ -399,7 +399,7 @@ stop_client_wireguard() {
 
   local configuration_file=${1:-$VPNM_WG_CLIENT_CONFIG_FILE}
 
-  local wg_is_up=$(sudo -E wg show "$configuration_file" >&/dev/null 2> /dev/null && echo 1 || echo 0)
+  local wg_is_up=$(sudo -E wg show "$configuration_file" >&/dev/null && echo 1 || echo 0)
   if [ -f "$configuration_file" ] && [ $wg_is_up -eq 1 ]; then
     sudo -E wg-quick down "$configuration_file"
     print_message "✔ wireguard stopped."
