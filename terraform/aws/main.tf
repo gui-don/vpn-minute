@@ -119,7 +119,7 @@ resource "aws_launch_template" "this" {
   key_name = var.allow_ssh ? element(aws_key_pair.this.*.key_name, 0) : null
 
   tag_specifications {
-    resource_type = "volume"
+    resource_type = "instance"
 
     tags = merge(
       local.tags,
