@@ -119,17 +119,6 @@ resource "aws_launch_template" "this" {
   key_name = var.allow_ssh ? element(aws_key_pair.this.*.key_name, 0) : null
 
   tag_specifications {
-    resource_type = "instance"
-
-    tags = merge(
-      local.tags,
-      {
-        Name = "ec2-${local.name}"
-      }
-    )
-  }
-
-  tag_specifications {
     resource_type = "volume"
 
     tags = merge(
@@ -231,10 +220,10 @@ resource "aws_iam_role" "this_spotfleet" {
   assume_role_policy = data.aws_iam_policy_document.spotfleet.json
 
   tags = merge(
-  local.tags,
-  {
-    Name = "rol-spf-${local.name}"
-  }
+    local.tags,
+    {
+      Name = "rol-spf-${local.name}"
+    }
   )
 }
 
