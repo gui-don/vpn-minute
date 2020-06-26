@@ -6,9 +6,12 @@ export VPNM_HOME="/tmp/vpnm"
 
 export VPNM_PROVIDER="aws"
 
-export VPNM_WG_SERVER_CONFIG_FILE="$VPNM_HOME/wg0_server.conf"
-export VPNM_WG_CLIENT_CONFIG_FILE="$VPNM_HOME/wg0_client.conf"
-export VPNM_WG_TEST_CONFIG_FILE="$VPNM_HOME/wg0_test.conf"
+export VPNM_WG_SERVER_CONFIG_NAME="wg0_server"
+export VPNM_WG_CLIENT_CONFIG_NAME="wg0_client"
+export VPNM_WG_TEST_CONFIG_NAME="wg0_test"
+export VPNM_WG_SERVER_CONFIG_FILE="$VPNM_HOME/$VPNM_WG_SERVER_CONFIG_NAME.conf"
+export VPNM_WG_CLIENT_CONFIG_FILE="$VPNM_HOME/$VPNM_WG_CLIENT_CONFIG_NAME.conf"
+export VPNM_WG_TEST_CONFIG_FILE="$VPNM_HOME/$VPNM_WG_TEST_CONFIG_NAME.conf"
 
 export VPNM_OS="ubuntu"
 export VPNM_OS_POSTROUTING_INTERFACE="ens5"
@@ -363,7 +366,7 @@ wait_vpn_connectivity() {
     sleep 2
   done
 
-  stop_client_wireguard "$VPNM_WG_TEST_CONFIG_FILE"
+  stop_client_wireguard "$VPNM_WG_TEST_CONFIG_FILE" "$VPNM_WG_TEST_CONFIG_NAME"
 
   print_message " ✔ ### VPN is ready."
 }
@@ -380,12 +383,13 @@ start_client_wireguard() {
   print_message "Start wireguard…"
 
   local configuration_file=${1:-$VPNM_WG_CLIENT_CONFIG_FILE}
+  local configuration_name=${2:-$VPNM_WG_CLIENT_CONFIG_NAME}
 
   if [ ! -f "$configuration_file" ]; then
     print_error "Error: cannot start wireguard client. No such file: \e[1m$configuration_file\e[22m."
   fi
 
-  local wg_is_up=$(sudo -E wg show "$configuration_file" >&/dev/null && echo 1 || echo 0)
+  local wg_is_up=$(sudo -E wg show "$configuration_name" >&/dev/null && echo 1 || echo 0)
   if [ "$wg_is_up" -eq 0 ]; then
     sudo -E wg-quick up "$configuration_file"
     print_message "✔ wireguard started."
@@ -398,9 +402,10 @@ stop_client_wireguard() {
   print_message "Stop wireguard…"
 
   local configuration_file=${1:-$VPNM_WG_CLIENT_CONFIG_FILE}
+  local configuration_name=${2:-$VPNM_WG_CLIENT_CONFIG_NAME}
 
-  local wg_is_up=$(sudo -E wg show "$configuration_file" >&/dev/null && echo 1 || echo 0)
-  if [ -f "$configuration_file" ] && [ $wg_is_up -eq 1 ]; then
+  local wg_is_up=$(sudo -E wg show "$configuration_name" >&/dev/null && echo 1 || echo 0)
+  if [ -f "$configuration_file" ] && [ "$wg_is_up" -eq 1 ]; then
     sudo -E wg-quick down "$configuration_file"
     print_message "✔ wireguard stopped."
   else
@@ -471,7 +476,7 @@ destroy_infrastructure() {
     local already_used_region="$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.region.value' | sed s/\"//g)"
 
     if [ -f "$TF_STATE_FILE" ]; then
-      HOME=$VPNM_HOME terraform destroy -state=$TF_STATE_FILE -state-out=$TF_STATE_FILE -auto-approve -var "destroy=true" -var "region=${already_used_region:-$AWS_DEFAULT_REGION}" -var "public_key=''" -var "base64_vpn_server_config=" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
+      HOME=$VPNM_HOME terraform destroy -force -state=$TF_STATE_FILE -state-out=$TF_STATE_FILE -auto-approve -var "destroy=true" -var "region=${already_used_region:+$AWS_DEFAULT_REGION}" -var "public_key=''" -var "base64_vpn_server_config=" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
     fi
     ;;
   *)
@@ -535,7 +540,7 @@ main() {
   stop)
     check_requirements "$@"
     configure_home
-    stop_client_wireguard "$VPNM_WG_TEST_CONFIG_FILE"
+    stop_client_wireguard "$VPNM_WG_TEST_CONFIG_FILE" "$VPNM_WG_TEST_CONFIG_NAME"
     stop_client_wireguard
     destroy_infrastructure
     delete_wireguard_configurations
