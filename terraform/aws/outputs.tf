@@ -1,9 +1,9 @@
 output "public_ip" {
-  value = data.aws_instance.this.public_ip
+  value = element(concat(data.aws_instance.this.*.public_ip, list("")), 0)
 }
 
 output "instance_id" {
-  value = data.aws_instance.this.id
+  value = element(concat(data.aws_instance.this.*.id, list("")), 0)
 }
 
 output "uuid" {

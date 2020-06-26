@@ -35,6 +35,11 @@ variable "region" {
 # Configuration
 ####
 
+variable "destroy" {
+  description = "This forces a destroy."
+  default     = false
+}
+
 variable "vpc_id" {
   description = "ID of the VPC (leave empty to use default VPC)"
   default     = ""

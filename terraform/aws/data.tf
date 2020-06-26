@@ -18,7 +18,7 @@ locals {
 }
 
 data "aws_ami" "ami" {
-  count       = local.is_defaut_ami_id ? 1 : 0
+  count = local.is_defaut_ami_id ? 1 : 0
 
   most_recent = true
   owners      = [lookup(local.ami_owners, var.ami_os)]
@@ -35,16 +35,20 @@ data "aws_ami" "ami" {
 }
 
 data "aws_vpc" "default" {
-  count   = local.is_default_vpc ? 1 : 0
+  count = local.is_default_vpc ? 1 : 0
+
   default = true
 }
 
 data "aws_subnet_ids" "this" {
-  count  = "" == var.subnet_id ? 1 : 0
+  count = "" == var.subnet_id ? 1 : 0
+
   vpc_id = concat(data.aws_vpc.default.*.id, [""])[0]
 }
 
 data "aws_instance" "this" {
+  count = var.destroy == false ? 1 : 0
+
   filter {
     name   = "tag:aws:ec2spot:fleet-request-id"
     values = [aws_spot_fleet_request.this.id]
