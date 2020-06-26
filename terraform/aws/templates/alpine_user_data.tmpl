@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env sh
 
-export VPNM_PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+export VPNM_PUBLIC_IP=$(wget -qO- "http://169.254.169.254/latest/meta-data/public-ipv4")
 export VPNM_BASE64_WG_SERVER_CONFIG="${base64_wg_server_config}"
 export VPNM_KNOWN_HOSTS_SSM_PARAMETER_NAME="${known_host_ssm_parameter_name}"
 export VPNM_REGION="${region}"
@@ -12,38 +12,46 @@ set -e
 # Installation
 ####
 
-sudo apt update
-sudo apt upgrade -y
+sudo apk update
+sudo apk upgrade
 
 ####
 # Install/Configure wireguard
 ####
 
-sudo apt install -y wireguard
+sudo apk add -U wireguard-tools
 
-sudo sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+sudo sh -c "echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/01-forward.conf"
 sudo sysctl -p
 
 sudo mkdir -p /etc/wireguard
-sudo bash -c "echo \"$VPNM_BASE64_WG_SERVER_CONFIG\" | base64 -d > /etc/wireguard/wg0.conf"
+sudo sh -c "echo \"$VPNM_BASE64_WG_SERVER_CONFIG\" | base64 -d > /etc/wireguard/wg0.conf"
 sudo chown -R root:root /etc/wireguard
 sudo chmod -R og-rwx /etc/wireguard/
-sudo systemctl enable wg-quick@wg0.service
+
+rc-update add local default
+sudo sh -c "echo 'wg-quick up wg0' > /etc/local.d/wireguard.start"
+sudo chmod +x /etc/local.d/wireguard.start
 
 ####
 # SSH configuration wireguard
 ####
 
 if [ "$VPNM_ALLOW_SSH" = true ]; then
-  sudo apt install -y awscli
+  sudo apk add py3-pip
+  sudo pip3 install awscli pip-autoremove
+
   ssh-keyscan localhost 2> /dev/null | sed "s/localhost/$VPNM_PUBLIC_IP/g" > known_host
   aws ssm put-parameter --overwrite --name="$VPNM_KNOWN_HOSTS_SSM_PARAMETER_NAME" --value="$(base64 known_host)" --type=String --region="$VPNM_REGION"
-  sudo apt purge -y awscli
+
+  sudo ln -s /usr/bin/pip3 /usr/bin/pip
+  sudo pip-autoremove awscli -y
+  sudo pip3 uninstall pip-autoremove -y
+  sudo apk del py3-pip
 fi
 
 ####
 # Cleaning
 ####
 
-sudo apt autoremove -y
 sudo reboot

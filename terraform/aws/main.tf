@@ -79,7 +79,7 @@ resource "aws_key_pair" "this" {
 resource "aws_launch_template" "this" {
   name = local.name
 
-  image_id      = local.is_default_vpc ? data.aws_ami.ubuntu.0.id : var.ami_id
+  image_id      = local.is_default_vpc ? data.aws_ami.ami.0.id : var.ami_id
   instance_type = var.instance_type
 
   user_data = base64encode(replace(data.template_file.user_data.rendered, "\r\n", "\n"))
@@ -96,7 +96,7 @@ resource "aws_launch_template" "this" {
     ebs {
       delete_on_termination = true
       encrypted             = true
-      volume_size           = 8
+      volume_size           = lookup(local.ami_size, var.ami_os)
       volume_type           = "gp2"
     }
   }

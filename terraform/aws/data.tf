@@ -1,13 +1,31 @@
 data "aws_caller_identity" "current" {}
 
-data "aws_ami" "ubuntu" {
+locals {
+  ami_owners = {
+    ubuntu = "099720109477"
+    alpine = "538276064493"
+  }
+
+  ami_name_search = {
+    ubuntu = "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"
+    alpine = "alpine-ami-3.11*"
+  }
+
+  ami_size = {
+    ubuntu = 8
+    alpine = 1
+  }
+}
+
+data "aws_ami" "ami" {
   count       = local.is_defaut_ami_id ? 1 : 0
+
   most_recent = true
-  owners      = ["099720109477"]
+  owners      = [lookup(local.ami_owners, var.ami_os)]
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    values = [lookup(local.ami_name_search, var.ami_os)]
   }
 
   filter {
@@ -34,7 +52,7 @@ data "aws_instance" "this" {
 }
 
 data "template_file" "user_data" {
-  template = file("${path.module}/templates/user_data.tmpl")
+  template = file("${path.module}/templates/${var.ami_os}_user_data.tmpl")
   vars = {
     allow_ssh                     = var.allow_ssh
     region                        = var.region
@@ -49,3 +67,6 @@ data "aws_ssm_parameter" "this_known_hosts" {
   name = element(aws_ssm_parameter.this_known_hosts.*.name, 0)
 }
 
+data "template_file" "test" {
+
+}

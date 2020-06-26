@@ -1,20 +1,34 @@
 #!/usr/bin/env bash
 
+export VPNM_APPLICATION_NAME="vpn-minute"
 export VPNM_VERBOSE=false
-export VPNM_PROVIDER="aws"
 export VPNM_HOME="/tmp/vpnm"
+
+export VPNM_PROVIDER="aws"
+
+export VPNM_WG_SERVER_CONFIG_FILE="$VPNM_HOME/wg0_server.conf"
+export VPNM_WG_CLIENT_CONFIG_FILE="$VPNM_HOME/wg0_client.conf"
+export VPNM_WG_TEST_CONFIG_FILE="$VPNM_HOME/wg0_test.conf"
+
+export VPNM_OS="ubuntu"
+export VPNM_OS_POSTROUTING_INTERFACE="eth0"
+
 export VPNM_ALLOW_SSH=false
-export VPNM_SSH_USER="ubuntu"
+export VPNM_SSH_USER="$VPNM_OS"
 export VPNM_SSH_KEY_FILE="$VPNM_HOME/id_rsa"
 export VPNM_SSH_KNOWN_HOST_FILE="$VPNM_HOME/known_hosts"
-export VPNM_WG_CLIENT_CONNECTION_NAME="wg0_client"
-export VPNM_WG_SERVER_CONFIG_FILE="$VPNM_HOME/wg0_server.conf"
-export VPNM_WG_CLIENT_CONFIG_FILE="$VPNM_HOME/$VPNM_WG_CLIENT_CONNECTION_NAME.conf"
-export VPNM_APPLICATION_NAME="vpn-minute"
+
+####
+# Terraform-specific variables
+####
 
 export TF_DATA_DIR="$VPNM_HOME/terraform"
 export TF_IN_AUTOMATION=true
 export TF_STATE_FILE="$VPNM_HOME/terraform_state/terraform.tfstate"
+
+####
+# AWS-specific variables
+####
 
 export AWS_DEFAULT_REGION="ca-central-1"
 if ! [ -z "$AWS_ACCESS_KEY_ID" ]; then
@@ -25,6 +39,10 @@ if ! [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
 fi
 
 set -e
+
+####
+# Command line utilities
+####
 
 configure_home() {
   print_message "Configure home…"
@@ -122,6 +140,7 @@ display_help() {
   echo "-p, --provider PROVIDER   set the provider to use"
   echo "-r, --region REGION       set the region to use, see below"
   echo "--ssh                     allows SSH connection to the $VPNM_APPLICATION_NAME server"
+  echo "--os-name                 what underlying OS to use, supported: ubuntu, alpine"
   echo " "
   echo "== Provider $VPNM_PROVIDER =="
   echo "Available regions:        "$(get_available_regions)
@@ -141,6 +160,24 @@ check_arguments() {
       ;;
     -vv | -vvv)
       set -x
+      shift
+      ;;
+    --os-name)
+      shift
+      if [ "$1" != "alpine" ] && [ "$1" != "ubuntu" ]; then
+        print_warn "Unsupported OS."
+        exit 1
+      fi
+      if test $# -gt 0 ; then
+        export VPNM_OS=$1
+        export VPNM_SSH_USER=$1
+        if [ "$1" == "ubuntu" ]; then
+          VPNM_OS_POSTROUTING_INTERFACE="ens5"
+        fi
+      else
+        print_warn "No OS name specified."
+        exit 1
+      fi
       shift
       ;;
     --ssh)
@@ -243,11 +280,33 @@ generate_wireguard_keys() {
   fi
 }
 
+generate_wireguard_test_configuration() {
+  print_message "Generate wireguard test configuration..."
+
+  if [ ! -f "$VPNM_WG_TEST_CONFIG_FILE" ]; then
+    local ip_check_host_ips=$(drill -D -4 A ifconfig.me | grep -Po '([\.0-9]{2,5}){3}$' | sed '$ d' | sed 's/$/\/32/' | paste -sd ",")
+
+    local wg_test_config="[Interface]\\n\
+Address = 192.168.2.2\\n\
+PrivateKey = $VPNM_WG_CLIENT_KEY\\n\
+\\n\
+[Peer]\\n\
+PublicKey = $VPNM_WG_SERVER_PUBLIC_KEY\\n\
+AllowedIPs = $ip_check_host_ips\\n\
+Endpoint = $VPNM_WG_SERVER_PUBLIC_IP:51820"
+    umask 066
+    echo -e "$wg_test_config" > "$VPNM_WG_TEST_CONFIG_FILE"
+    print_message "✔ wireguard test configuration generated."
+  else
+    print_message "✔ wireguard test configuration already generated."
+  fi
+}
+
 generate_wireguard_client_configuration() {
   print_message "Generate wireguard client configuration..."
 
   if [ ! -f "$VPNM_WG_CLIENT_CONFIG_FILE" ]; then
-    VPNM_WG_CLIENT_CONFIG="[Interface]\\n\
+    local wg_client_config="[Interface]\\n\
 Address = 192.168.2.2\\n\
 PrivateKey = $VPNM_WG_CLIENT_KEY\\n\
 \\n\
@@ -256,7 +315,7 @@ PublicKey = "$VPNM_WG_SERVER_PUBLIC_KEY"\\n\
 AllowedIPs = 0.0.0.0/0\\n\
 Endpoint = $VPNM_WG_SERVER_PUBLIC_IP:51820"
     umask 066
-    echo -e "$VPNM_WG_CLIENT_CONFIG" >$VPNM_WG_CLIENT_CONFIG_FILE
+    echo -e "$wg_client_config" > $VPNM_WG_CLIENT_CONFIG_FILE
     print_message "✔ wireguard client configuration generated."
   else
     print_message "✔ wireguard client configuration already generated."
@@ -267,17 +326,17 @@ generate_wireguard_server_configuration() {
   print_message "Generate wireguard client configuration..."
 
   if [ ! -f "$VPNM_WG_SERVER_CONFIG_FILE" ]; then
-    VPNM_WG_SERVER_CONFIG="[Interface]\\n\
+    local wg_server_config="[Interface]\\n\
 Address = 192.168.2.1 \\n\
 PrivateKey = $VPNM_WG_SERVER_KEY\\n\
 ListenPort = 51820\\n\
-PostUp   = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o ens5 -j MASQUERADE\\n\
-PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ens5 -j MASQUERADE\\n\
+PostUp   = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o $VPNM_OS_POSTROUTING_INTERFACE -j MASQUERADE\\n\
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o $VPNM_OS_POSTROUTING_INTERFACE -j MASQUERADE\\n\
 [Peer]\\n\
 PublicKey = $VPNM_WG_CLIENT_PUBLIC_KEY\\n\
 AllowedIPs = 192.168.2.2/32"
     umask 066
-    echo -e "$VPNM_WG_SERVER_CONFIG" >$VPNM_WG_SERVER_CONFIG_FILE
+    echo -e "$wg_server_config" > "$VPNM_WG_SERVER_CONFIG_FILE"
     print_message "✔ wireguard server configuration generated."
   else
     print_message "✔ wireguard server configuration already generated."
@@ -294,20 +353,19 @@ delete_wireguard_configurations() {
 }
 
 wait_vpn_connectivity() {
-  print_message " ### Wait for VPN to be ready..."
+  print_message "   ### Wait for VPN to be ready..."
 
   local ip_check_host_ips=$(drill -D -4 A ifconfig.me | grep -Po '([\.0-9]{2,5}){3}$' | sed '$ d' | sed 's/$/\/32/' | paste -sd ",")
 
-  stop_client_wireguard
-  start_client_wireguard "$ip_check_host_ips"
+  start_client_wireguard "$VPNM_WG_TEST_CONFIG_FILE"
 
   while ! is_connected; do
-    sleep 3
+    sleep 2
   done
 
-  stop_client_wireguard
+  stop_client_wireguard "$VPNM_WG_TEST_CONFIG_FILE"
 
-  print_message " ### ✔ VPN is ready."
+  print_message " ✔ ### VPN is ready."
 }
 
 is_connected() {
@@ -321,17 +379,15 @@ is_connected() {
 start_client_wireguard() {
   print_message "Start wireguard…"
 
-  local route=${1:-0.0.0.0/0}
+  local configuration_file=${1:-$VPNM_WG_CLIENT_CONFIG_FILE}
 
-  sed -i "s|AllowedIPs \= .*|AllowedIPs \= $route|" $VPNM_WG_CLIENT_CONFIG_FILE
-
-  if [ ! -f $VPNM_WG_CLIENT_CONFIG_FILE ]; then
-    print_error "Error: cannot start wireguard client. No such file: \e[1m$VPNM_WG_CLIENT_CONFIG_FILE\e[22m."
+  if [ ! -f "$configuration_file" ]; then
+    print_error "Error: cannot start wireguard client. No such file: \e[1m$configuration_file\e[22m."
   fi
 
-  local wg_is_up=$(sudo -E wg show $VPNM_WG_CLIENT_CONNECTION_NAME >&/dev/null && echo 1 || echo 0)
-  if [ $wg_is_up -eq 0 ]; then
-    sudo -E wg-quick up $VPNM_WG_CLIENT_CONFIG_FILE
+  local wg_is_up=$(sudo -E wg show "$configuration_file" >&/dev/null && echo 1 || echo 0)
+  if [ "$wg_is_up" -eq 0 ]; then
+    sudo -E wg-quick up "$configuration_file"
     print_message "✔ wireguard started."
   else
     print_message "✔ wireguard already running."
@@ -341,14 +397,11 @@ start_client_wireguard() {
 stop_client_wireguard() {
   print_message "Stop wireguard…"
 
-  local wg_is_up=$(sudo -E wg show $VPNM_WG_CLIENT_CONNECTION_NAME >&/dev/null && echo 1 || echo 0)
-  if [ $wg_is_up -eq 1 ]; then
-    if [ ! -f $VPNM_WG_CLIENT_CONFIG_FILE ]; then
-      umask 066
-      sudo wg showconf wg0_client >$VPNM_WG_CLIENT_CONFIG_FILE
-    fi
+  local configuration_file=${1:-$VPNM_WG_CLIENT_CONFIG_FILE}
 
-    sudo -E wg-quick down $VPNM_WG_CLIENT_CONFIG_FILE
+  local wg_is_up=$(sudo -E wg show "$configuration_file" >&/dev/null && echo 1 || echo 0)
+  if [ -f "$configuration_file" ] && [ "$wg_is_up" -eq 0 ]; then
+    sudo -E wg-quick down "$configuration_file"
     print_message "✔ wireguard stopped."
   else
     print_message "✔ wireguard not running."
@@ -379,14 +432,14 @@ deploy_infrastructure() {
   case $VPNM_PROVIDER in
   aws)
     HOME=$VPNM_HOME terraform init terraform/aws
-    HOME=$VPNM_HOME terraform apply -state=$TF_STATE_FILE -state-out=$TF_STATE_FILE -auto-approve -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
+    HOME=$VPNM_HOME terraform apply -state=$TF_STATE_FILE -state-out=$TF_STATE_FILE -auto-approve -var "ami_os=$VPNM_OS" -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
 
     print_message "Waiting for SSH..."
 
     if [ "$VPNM_ALLOW_SSH" = true ]; then
       while [ "$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.ssh_known_hosts.value' | sed s/\"//g)" == "IN PROGRESS..." ]; do
         HOME=$VPNM_HOME terraform refresh -state=$TF_STATE_FILE -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
-        sleep 5
+        sleep 4
       done
     fi
 
@@ -437,14 +490,14 @@ check_status() {
 
   printf "Connection: "
   if is_connected ; then
-    echo $VPNM_WG_SERVER_PUBLIC_IP
+    echo "$VPNM_WG_SERVER_PUBLIC_IP"
   else
     echo "not connected"
   fi
 
   if [ "$VPNM_ALLOW_SSH" = true ]; then
     printf "SSH: "
-    ssh -i $VPNM_SSH_KEY_FILE -o UserKnownHostsFile=$VPNM_SSH_KNOWN_HOST_FILE -o ConnectionAttempts=10 $VPNM_SSH_USER@$VPNM_WG_SERVER_PUBLIC_IP echo 'SSH is working'
+    ssh -i $VPNM_SSH_KEY_FILE -o UserKnownHostsFile=$VPNM_SSH_KNOWN_HOST_FILE -o ConnectionAttempts=10 "$VPNM_SSH_USER"@"$VPNM_WG_SERVER_PUBLIC_IP" echo 'SSH is working'
   fi
 
   print_message "✔ wireguard server status checked."
@@ -467,6 +520,7 @@ main() {
       create_ssh_key
     fi
     deploy_infrastructure
+    generate_wireguard_test_configuration
     generate_wireguard_client_configuration
     if ! is_connected; then
       wait_vpn_connectivity

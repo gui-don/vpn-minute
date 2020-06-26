@@ -40,6 +40,11 @@ variable "vpc_id" {
   default     = ""
 }
 
+variable "ami_os" {
+  description = "What is the underlying OS to use."
+  default     = "ubuntu"
+}
+
 variable "ami_id" {
   description = "ID of the Amazon Image to use (leave empty to use the latest Ubuntu)"
   default     = ""
