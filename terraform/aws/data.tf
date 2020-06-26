@@ -66,7 +66,3 @@ data "aws_ssm_parameter" "this_known_hosts" {
 
   name = element(aws_ssm_parameter.this_known_hosts.*.name, 0)
 }
-
-data "template_file" "test" {
-
-}
