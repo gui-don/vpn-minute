@@ -443,7 +443,7 @@ deploy_infrastructure() {
       done
     fi
 
-    print_message -e "✔ SSH ready."
+    print_message "✔ SSH ready."
 
     export VPNM_WG_SERVER_PUBLIC_IP=$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.public_ip.value' | sed s/\"//g)
     export VPNM_WG_SERVER_INSTANCE_ID=$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.instance_id.value' | sed s/\"//g)
