@@ -310,7 +310,7 @@ PrivateKey = $VPNM_WG_CLIENT_KEY\\n\
 \\n\
 [Peer]\\n\
 PublicKey = "$VPNM_WG_SERVER_PUBLIC_KEY"\\n\
-AllowedIPs = 0.0.0.0/0\\n\
+AllowedIPs = 0.0.0.0/0, ::/0\\n\
 Endpoint = $VPNM_WG_SERVER_PUBLIC_IP:51820"
     umask 066
     echo -e "$wg_client_config" > $VPNM_WG_CLIENT_CONFIG_FILE
