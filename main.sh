@@ -2,11 +2,13 @@
 
 export VPNM_APPLICATION_NAME="vpn-minute"
 export VPNM_VERBOSE=false
-export VPNM_HOME="${XDG_DATA_HOME:-~/.local/share}/vpnm"
+export VPNM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/vpnm"
 export VPNM_CODE_TERRAFORM_PATH="/usr/share/$VPNM_APPLICATION_NAME/terraform"
 if [ ! -d "$VPNM_CODE_TERRAFORM_PATH" ]; then
   export VPNM_CODE_TERRAFORM_PATH="terraform"
 fi
+
+export VPNM_STATEFILE="$VPNM_HOME/vpnm.statefile"
 
 export VPNM_PROVIDER="aws"
 
@@ -48,6 +50,71 @@ fi
 set -e
 
 ####
+# Tools
+####
+
+add_entry_in_statefile() {
+  echo "$1=$2" >> $VPNM_STATEFILE
+}
+
+remove_entry_in_statefile() {
+  sed -i.bak "/$1=/d" $VPNM_STATEFILE
+}
+
+get_key_in_statefile() {
+  echo $(grep "$1=" $VPNM_STATEFILE| head -n 1)
+}
+
+check_if_key_exist_in_statefile() {
+  local entry=$(get_key_in_statefile $1)
+
+  if [[ $(echo "$entry"| wc -w) -gt 0 ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+check_if_key_exist_and_its_value_is_not_empty_in_statefile() {
+  local entry=$(get_key_in_statefile $1)
+
+  if check_if_key_exist_in_statefile "$1"; then
+    if [[ $(echo "$entry"| sed "s%$1=%%" |wc -w) -gt 0 ]]; then
+      return 0
+    else
+      return 1
+    fi
+  else
+    return 1
+  fi
+}
+
+get_value_in_statefile() {
+  if check_if_key_exist_and_its_value_is_not_empty_in_statefile $1; then
+    local value=$(grep "$1=" $VPNM_STATEFILE| head -n 1| sed "s%$1=%%")
+    echo $value
+    return 0
+  else
+    return 1
+  fi
+}
+
+edit_entry_if_exist_in_statefile() {
+  if ! check_if_key_exist_and_its_value_is_not_empty_in_statefile "$1"; then
+    return 1
+  else
+    sed -i.bak "s%$1=.*%$1=$2%" $VPNM_STATEFILE
+    return 0
+  fi
+}
+
+edit_entry_if_existe_or_create_new_if_not_exist_in_statefile() {
+  if ! edit_entry_if_exist_in_statefile $1 $2; then 
+    add_entry_in_statefile "$1" "$2"
+  fi
+}
+
+####
 # Command line utilities
 ####
 
@@ -55,6 +122,7 @@ configure_home() {
   print_message "Configure home…"
 
   mkdir -p $VPNM_HOME
+  edit_entry_if_existe_or_create_new_if_not_exist_in_statefile "home" "configured" 
 
   print_message "✔ Home configured."
 }
@@ -239,9 +307,11 @@ display_ssh_command() {
 create_ssh_key() {
   print_message "Generate SSH key..."
 
-  if [ ! -f $VPNM_SSH_KEY_FILE ]; then
-    ssh-keygen -t rsa -b 4096 -f $VPNM_SSH_KEY_FILE -C "$VPNM_APPLICATION_NAME" -q -N ""
+  local ssh_key_in_state_file_base64=$(get_value_in_statefile "ssh_key_base64")
 
+  if [[ "$ssh_key_in_state_file_base64" != $(cat $VPNM_SSH_KEY_FILE 2> /dev/null | base64 -w 0) || $(check_if_key_exist_in_statefile "ssh_key_base64") ]]; then
+    ssh-keygen -t rsa -b 4096 -f $VPNM_SSH_KEY_FILE -C "$VPNM_APPLICATION_NAME" -q -N ""
+    edit_entry_if_existe_or_create_new_if_not_exist_in_statefile "ssh_key_base64" $(cat $VPNM_SSH_KEY_FILE 2> /dev/null | base64 -w 0)
     print_message "✔ SSH key generated."
   else
     print_message "✔ SSH key already generated."
@@ -254,6 +324,7 @@ delete_ssh_key() {
   print_message "Delete SSH key..."
 
   rm -f $VPNM_SSH_KEY_FILE $VPNM_SSH_KEY_FILE.pub
+  remove_entry_in_statefile "ssh_key_base64"
 
   print_message "✔ SSH key deleted."
 }
@@ -265,30 +336,41 @@ delete_ssh_key() {
 generate_wireguard_keys() {
   print_message "Generate wireguard keys..."
 
-  if [ ! -f "$VPNM_WG_SERVER_CONFIG_FILE" ]; then
+  if ! check_if_key_exist_and_its_value_is_not_empty_in_statefile "wg_server_private_key"; then
     export VPNM_WG_SERVER_KEY=$(wg genkey)
-    export VPNM_WG_SERVER_PUBLIC_KEY=$(echo "$VPNM_WG_SERVER_KEY" | wg pubkey)
-    print_message "✔ wireguard server keys generated."
+    add_entry_in_statefile "wg_server_private_key" "$VPNM_WG_SERVER_KEY"
+    print_message "✔ wireguard server private key generated."
   else
-    print_message "✔ wireguard server keys already generated."
+    export VPNM_WG_SERVER_KEY=$(get_value_in_statefile "wg_server_private_key")
+    print_message "✔ wireguard server private key already generated."
   fi
 
-  if [ ! -f "$VPNM_WG_CLIENT_CONFIG_FILE" ]; then
+  export VPNM_WG_SERVER_PUBLIC_KEY=$(echo "$VPNM_WG_SERVER_KEY" | wg pubkey)
+  edit_entry_if_existe_or_create_new_if_not_exist_in_statefile "wg_server_public_key" "$VPNM_WG_SERVER_PUBLIC_KEY"
+  print_message "✔ wireguard server public key generated."
+  
+  if ! check_if_key_exist_and_its_value_is_not_empty_in_statefile "wg_client_private_key"; then
     export VPNM_WG_CLIENT_KEY=$(wg genkey)
-    export VPNM_WG_CLIENT_PUBLIC_KEY=$(echo "$VPNM_WG_CLIENT_KEY" | wg pubkey)
-    print_message "✔ wireguard client keys generated."
+    add_entry_in_statefile "wg_client_private_key" "$VPNM_WG_CLIENT_KEY"
+    print_message "✔ wireguard client private key generated."
   else
-    print_message "✔ wireguard client keys already generated."
+    export VPNM_WG_CLIENT_KEY=$(get_value_in_statefile "wg_client_private_key")
+    print_message "✔ wireguard client private key already generated."
   fi
+
+  export VPNM_WG_CLIENT_PUBLIC_KEY=$(echo "$VPNM_WG_CLIENT_KEY" | wg pubkey)
+  edit_entry_if_existe_or_create_new_if_not_exist_in_statefile "wg_client_public_key" "$VPNM_WG_CLIENT_PUBLIC_KEY"
+  print_message "✔ wireguard client public key generated."
 }
 
 generate_wireguard_test_configuration() {
   print_message "Generate wireguard test configuration..."
 
-  if [ ! -f "$VPNM_WG_TEST_CONFIG_FILE" ]; then
-    local ip_check_host_ips=$(drill -D -4 A ifconfig.me | grep -Po '([\.0-9]{2,5}){3}$' | sed '$ d' | sed 's/$/\/32/' | paste -sd ",")
+  local wg_test_config_in_state_file_base64=$(get_value_in_statefile "wg_test_config_file_base64")
 
-    local wg_test_config="[Interface]\\n\
+  local ip_check_host_ips=$(drill -D -4 A ifconfig.me | grep -Po '([\.0-9]{2,5}){3}$' | sed '$ d' | sed 's/$/\/32/' | paste -sd ",")
+
+  local wg_test_config="[Interface]\\n\
 Address = 192.168.2.2\\n\
 PrivateKey = $VPNM_WG_CLIENT_KEY\\n\
 \\n\
@@ -296,8 +378,11 @@ PrivateKey = $VPNM_WG_CLIENT_KEY\\n\
 PublicKey = $VPNM_WG_SERVER_PUBLIC_KEY\\n\
 AllowedIPs = $ip_check_host_ips\\n\
 Endpoint = $VPNM_WG_SERVER_PUBLIC_IP:51820"
+
+  if [[ "$wg_test_config_in_state_file_base64" != $(echo -e "$wg_test_config" | base64 -w 0) || "$wg_test_config_in_state_file_base64" != $(cat $VPNM_WG_TEST_CONFIG_FILE 2> /dev/null | base64 -w 0) ]]; then
     umask 066
     echo -e "$wg_test_config" > "$VPNM_WG_TEST_CONFIG_FILE"
+    edit_entry_if_existe_or_create_new_if_not_exist_in_statefile "wg_test_config_file_base64" $(echo $(echo -e "$wg_test_config"| base64 -w 0))
     print_message "✔ wireguard test configuration generated."
   else
     print_message "✔ wireguard test configuration already generated."
@@ -307,8 +392,9 @@ Endpoint = $VPNM_WG_SERVER_PUBLIC_IP:51820"
 generate_wireguard_client_configuration() {
   print_message "Generate wireguard client configuration..."
 
-  if [ ! -f "$VPNM_WG_CLIENT_CONFIG_FILE" ]; then
-    local wg_client_config="[Interface]\\n\
+  local wg_client_config_in_state_file_base64=$(get_value_in_statefile "wg_client_config_file_base64")
+
+  local wg_client_config="[Interface]\\n\
 Address = 192.168.2.2\\n\
 PrivateKey = $VPNM_WG_CLIENT_KEY\\n\
 \\n\
@@ -316,8 +402,11 @@ PrivateKey = $VPNM_WG_CLIENT_KEY\\n\
 PublicKey = "$VPNM_WG_SERVER_PUBLIC_KEY"\\n\
 AllowedIPs = 0.0.0.0/0, ::/0\\n\
 Endpoint = $VPNM_WG_SERVER_PUBLIC_IP:51820"
+
+  if [[ "$wg_client_config_in_state_file_base64" != $(echo -e "$wg_client_config" | base64 -w 0) || "$wg_client_config_in_state_file_base64" != $(cat $VPNM_WG_CLIENT_CONFIG_FILE 2> /dev/null | base64 -w 0) ]]; then
     umask 066
     echo -e "$wg_client_config" > $VPNM_WG_CLIENT_CONFIG_FILE
+    edit_entry_if_existe_or_create_new_if_not_exist_in_statefile "wg_client_config_file_base64" $(echo $(echo -e "$wg_client_config"| base64 -w 0))
     print_message "✔ wireguard client configuration generated."
   else
     print_message "✔ wireguard client configuration already generated."
@@ -327,8 +416,9 @@ Endpoint = $VPNM_WG_SERVER_PUBLIC_IP:51820"
 generate_wireguard_server_configuration() {
   print_message "Generate wireguard client configuration..."
 
-  if [ ! -f "$VPNM_WG_SERVER_CONFIG_FILE" ]; then
-    local wg_server_config="[Interface]\\n\
+  local wg_server_config_in_state_file_base64=$(get_value_in_statefile "wg_server_config_file_base64")
+
+  local wg_server_config="[Interface]\\n\
 Address = 192.168.2.1 \\n\
 PrivateKey = $VPNM_WG_SERVER_KEY\\n\
 ListenPort = 51820\\n\
@@ -337,8 +427,11 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACC
 [Peer]\\n\
 PublicKey = $VPNM_WG_CLIENT_PUBLIC_KEY\\n\
 AllowedIPs = 192.168.2.2/32"
+  
+  if [[ "$wg_server_config_in_state_file_base64" != $(echo -e "$wg_server_config" | base64 -w 0) || "$wg_server_config_in_state_file_base64" != $(cat $VPNM_WG_SERVER_CONFIG_FILE 2> /dev/null | base64 -w 0) ]]; then
     umask 066
     echo -e "$wg_server_config" > "$VPNM_WG_SERVER_CONFIG_FILE"
+    edit_entry_if_existe_or_create_new_if_not_exist_in_statefile "wg_server_config_file_base64" $(echo $(echo -e "$wg_server_config"| base64 -w 0))
     print_message "✔ wireguard server configuration generated."
   else
     print_message "✔ wireguard server configuration already generated."
@@ -349,7 +442,21 @@ delete_wireguard_configurations() {
   print_message "Delete wireguard configuration..."
 
   rm -f $VPNM_WG_CLIENT_CONFIG_FILE
+  remove_entry_in_statefile "wg_client_config_file_base64"
+
+  rm -f $VPNM_WG_TEST_CONFIG_FILE
+  remove_entry_in_statefile "wg_test_config_file_base64"
+
   rm -f $VPNM_WG_SERVER_CONFIG_FILE
+  remove_entry_in_statefile "wg_server_config_file_base64"
+
+  
+  remove_entry_in_statefile "wg_server_private_key"
+  remove_entry_in_statefile "wg_server_public_key"
+  remove_entry_in_statefile "wg_public_private_key"
+  remove_entry_in_statefile "wg_public_public_key"
+  remove_entry_in_statefile "wg_client_private_key"
+  remove_entry_in_statefile "wg_client_public_key"
 
   print_message "✔ wireguard configuration deleted."
 }
@@ -468,7 +575,10 @@ deploy_infrastructure() {
 destroy_infrastructure() {
   print_message "Destroy infrastructure..."
 
-  mkdir -p $TF_DATA_DIR
+  if [ ! -d $TF_DATA_DIR ]; then
+    print_message "✔ infrastructure already destroyed."
+    return 0
+  fi
 
   case $VPNM_PROVIDER in
   aws)
@@ -517,7 +627,9 @@ main() {
   case $VPNM_ACTION in
   start)
     check_requirements "$@"
-    configure_home
+    if [[ $(get_value_in_statefile "home") != "configured" ]]; then
+      configure_home
+    fi
     generate_wireguard_keys
     generate_wireguard_server_configuration
     if [ "$VPNM_ALLOW_SSH" = true ]; then
@@ -538,7 +650,9 @@ main() {
     ;;
   stop)
     check_requirements "$@"
-    configure_home
+    if [[ $(get_value_in_statefile "home") != "configured" ]]; then
+     configure_home
+    fi
     stop_client_wireguard "$VPNM_WG_TEST_CONFIG_FILE" "$VPNM_WG_TEST_CONFIG_NAME"
     stop_client_wireguard
     destroy_infrastructure
@@ -546,7 +660,9 @@ main() {
     if [ "$VPNM_ALLOW_SSH" = true ]; then
       delete_ssh_key
     fi
-    delete_home
+    if [[ $(get_value_in_statefile "home") == "configured" ]]; then
+      delete_home
+    fi
     exit 0
     ;;
   status)
