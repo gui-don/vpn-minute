@@ -101,11 +101,6 @@ check_requirements() {
     exit 101
   fi
 
-  if ! [ -x "$(command -v aws)" ]; then
-    print_error "\e[1maws\e[22m command is not available in your system."
-    exit 101
-  fi
-
   if ! [ -x "$(command -v sudo)" ]; then
     print_error "\e[1msudo\e[22m command is not available in your system."
     exit 101
@@ -315,7 +310,7 @@ PrivateKey = $VPNM_WG_CLIENT_KEY\\n\
 \\n\
 [Peer]\\n\
 PublicKey = "$VPNM_WG_SERVER_PUBLIC_KEY"\\n\
-AllowedIPs = 0.0.0.0/0\\n\
+AllowedIPs = 0.0.0.0/0, ::/0\\n\
 Endpoint = $VPNM_WG_SERVER_PUBLIC_IP:51820"
     umask 066
     echo -e "$wg_client_config" > $VPNM_WG_CLIENT_CONFIG_FILE
