@@ -101,11 +101,6 @@ check_requirements() {
     exit 101
   fi
 
-  if ! [ -x "$(command -v aws)" ]; then
-    print_error "\e[1maws\e[22m command is not available in your system."
-    exit 101
-  fi
-
   if ! [ -x "$(command -v sudo)" ]; then
     print_error "\e[1msudo\e[22m command is not available in your system."
     exit 101
