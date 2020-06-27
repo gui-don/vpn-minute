@@ -2,7 +2,7 @@
 
 export VPNM_APPLICATION_NAME="vpn-minute"
 export VPNM_VERBOSE=false
-export VPNM_HOME="/tmp/vpnm"
+export VPNM_HOME="${XDG_DATA_HOME:-~/.local/share}/vpnm"
 
 export VPNM_PROVIDER="aws"
 
