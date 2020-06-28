@@ -4,12 +4,17 @@
 
 For in-depth information, look at the [wiki](https://gitlab.com/gui-don/vpn-minute/-/wikis/home).
 
+## Installation
+
+- archlinux: [aur package](https://aur.archlinux.org/packages/vpn-minute) is available under the name `vpn-minute`.
+- Other: no package available at the moment.
+
 ## Getting started
 
 1. Read the [wiki](https://gitlab.com/gui-don/vpn-minute/-/wikis/home).
 2. Understand what’s written on the [wiki](https://gitlab.com/gui-don/vpn-minute/-/wikis/home).
 3. [Create and activate an AWS account](https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/).
-4. `$ ./main.sh -h`
+4. `$ vpnm -h`
 
 ## Caveat
 
