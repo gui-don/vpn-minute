@@ -3,6 +3,7 @@
 export VPNM_APPLICATION_NAME="vpn-minute"
 export VPNM_VERBOSE=false
 export VPNM_HOME="${XDG_DATA_HOME:-~/.local/share}/vpnm"
+export VPNM_CODE_TERRAFORM_PATH="/usr/share/$VPNM_APPLICATION_NAME/terraform"
 
 export VPNM_PROVIDER="aws"
 
@@ -427,18 +428,18 @@ get_available_regions() {
 deploy_infrastructure() {
   print_message "Deploy infrastructure..."
 
-  mkdir -p $TF_DATA_DIR
+  mkdir -p "$TF_DATA_DIR"
 
   case $VPNM_PROVIDER in
   aws)
-    HOME=$VPNM_HOME terraform init terraform/aws
-    HOME=$VPNM_HOME terraform apply -state=$TF_STATE_FILE -state-out=$TF_STATE_FILE -auto-approve -var "ami_os=$VPNM_OS" -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
+    HOME=$VPNM_HOME terraform init "VPNM_CODE_TERRAFORM_PATH/aws"
+    HOME=$VPNM_HOME terraform apply -state="$TF_STATE_FILE" -state-out="$TF_STATE_FILE" -auto-approve -var "ami_os=$VPNM_OS" -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" "$VPNM_CODE_TERRAFORM_PATH/aws"
 
     print_message "Waiting for SSH..."
 
     if [ "$VPNM_ALLOW_SSH" = true ]; then
       while [ "$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.ssh_known_hosts.value' | sed s/\"//g)" == "IN PROGRESS..." ]; do
-        HOME=$VPNM_HOME terraform refresh -state=$TF_STATE_FILE -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
+        HOME=$VPNM_HOME terraform refresh -state=$TF_STATE_FILE -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" "VPNM_CODE_TERRAFORM_PATH/aws"
         sleep 4
       done
     fi
@@ -471,7 +472,7 @@ destroy_infrastructure() {
     local already_used_region="$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.region.value' | sed s/\"//g)"
 
     if [ -f "$TF_STATE_FILE" ]; then
-      HOME=$VPNM_HOME terraform destroy -force -state=$TF_STATE_FILE -state-out=$TF_STATE_FILE -auto-approve -var "destroy=true" -var "region=${already_used_region:+$AWS_DEFAULT_REGION}" -var "public_key=''" -var "base64_vpn_server_config=" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" terraform/aws
+      HOME=$VPNM_HOME terraform destroy -force -state=$TF_STATE_FILE -state-out=$TF_STATE_FILE -auto-approve -var "destroy=true" -var "region=${already_used_region:+$AWS_DEFAULT_REGION}" -var "public_key=''" -var "base64_vpn_server_config=" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" "VPNM_CODE_TERRAFORM_PATH/aws"
     fi
     ;;
   *)
