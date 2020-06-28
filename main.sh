@@ -4,6 +4,9 @@ export VPNM_APPLICATION_NAME="vpn-minute"
 export VPNM_VERBOSE=false
 export VPNM_HOME="${XDG_DATA_HOME:-~/.local/share}/vpnm"
 export VPNM_CODE_TERRAFORM_PATH="/usr/share/$VPNM_APPLICATION_NAME/terraform"
+if [ ! -f "$VPNM_CODE_TERRAFORM_PATH" ]; then
+  export VPNM_CODE_TERRAFORM_PATH="terraform"
+fi
 
 export VPNM_PROVIDER="aws"
 
