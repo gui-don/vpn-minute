@@ -1,15 +1,107 @@
 stages:
+  - build
+  - test
   - deploy
 
-image: alpine:3.12
+image: archlinux:latest
 
-deploy_aur:
-  stage: deploy
-  script:
-    - install/generate_pkgbuild.sh "${CI_COMMIT_TAG}" ""
-    - cat PKGBUILD
+variables:
+  AUR_REPOSITORY_PATH: "/tmp/aur-$CI_PROJECT_TITLE"
+
+.git_setup_archlinux:
+  before_script:
+    - pacman -Suy --noconfirm git openssh
+    - mkdir ~/.ssh/
+    - echo "$AUR_PUBLIC_KEY" > ~/.ssh/id_ed25519.pub
+    - echo "$AUR_PRIVATE_KEY_BASE_64" | base64 -d > ~/.ssh/id_ed25519
+    - echo "$AUR_KNOWN_HOSTS_BASE_64" | base64 -d > ~/.ssh/known_hosts
+    - chmod 400 ~/.ssh/id_ed25519
+    - git clone ssh://aur@aur.archlinux.org/$CI_PROJECT_TITLE.git "$AUR_REPOSITORY_PATH"
+  artifacts:
+    paths:
+      - PKGBUILD
+      - .SRCINFO
   only:
-    - tags
-    - /^v?[0-9]+\.[0-9]+\.[0-9]+$/
-#  except:
-#    - branches
+    refs:
+      - /^v?[0-9]+\.[0-9]+\.[0-9]+$/
+    variables:
+      - $CI_COMMIT_REF_PROTECTED == "true"
+  except:
+    - schedules
+    - api
+    - external
+    - chat
+
+build_package_archlinux:
+  stage: build
+  extends: .git_setup_archlinux
+  script:
+    - pacman -Sy --noconfirm sudo base-devel curl
+    - export CURRENT_VERSION=$(cat "$AUR_REPOSITORY_PATH/PKGBUILD" | grep 'pkgver=' | cut -f 2 -d "=" | tr -d '"')
+    - export PKGREL=$(cat "$AUR_REPOSITORY_PATH/PKGBUILD" | grep 'pkgrel=' | cut -f 2 -d "=" | tr -d '"')
+    - export CI_COMMIT_TAG=${CI_COMMIT_TAG:-$CURRENT_VERSION}
+    - export ARCHIVE_NAME="$CI_PROJECT_TITLE-$CI_COMMIT_TAG.tar.gz"
+    - curl -o "/tmp/$ARCHIVE_NAME" -fSL "https://gitlab.com/gui-don/$CI_PROJECT_TITLE/-/archive/$CI_COMMIT_TAG/$CI_PROJECT_TITLE-$CI_COMMIT_TAG.tar.gz"
+    - export B2SUM=$(b2sum "/tmp/$CI_PROJECT_TITLE-$CI_COMMIT_TAG.tar.gz" | cut -f 1 -d " ")
+    - rm "/tmp/$ARCHIVE_NAME"
+    - if [ "$CI_COMMIT_TAG" = "$CURRENT_VERSION" ]; then let "PKGREL++"; else PKGREL=1; fi
+    - install/generate_pkgbuild.sh "$CI_COMMIT_TAG" "$PKGREL" "$B2SUM"
+    - useradd -m -G wheel makepkg
+    - sudo -u makepkg sh -c 'makepkg --printsrcinfo > "/tmp/.SRCINFO"'
+    - cp /tmp/.SRCINFO .SRCINFO
+
+build_package_archlinux_for_test:
+  stage: build
+  before_script:
+    - pacman -Sy --noconfirm sudo base-devel
+    - useradd -m -G wheel makepkg
+    - export CURRENT_VERSION=test
+    - export PKGREL=1
+    - export B2SUM=test
+    - export ARCHIVE_NAME="$CI_PROJECT_TITLE-$CURRENT_VERSION"
+  script:
+    - install/generate_pkgbuild.sh "$CURRENT_VERSION" "$PKGREL" "$B2SUM"
+    - mv ../$CI_PROJECT_TITLE/ ../$ARCHIVE_NAME/
+    - tar -czf "$ARCHIVE_NAME.tar.gz" ../$ARCHIVE_NAME
+    - mv ../$ARCHIVE_NAME/ ../$CI_PROJECT_TITLE/
+    - sudo -u makepkg sh -c 'makepkg --printsrcinfo > "/tmp/.SRCINFO"'
+    - cp /tmp/.SRCINFO .SRCINFO
+  artifacts:
+    paths:
+      - PKGBUILD
+      - .SRCINFO
+      - "*.tar.gz"
+  only:
+    variables:
+      - $CI_COMMIT_REF_PROTECTED == "false"
+
+test_package_archlinux:
+  stage: test
+  before_script:
+    - pacman -Sy --noconfirm base-devel
+    - useradd -m -G wheel makepkg
+    - sed -i 's/^#\s*\(%wheel\s*ALL=(ALL)\s*NOPASSWD:\s*ALL\)/\1/' /etc/sudoers
+  script:
+    - if [ $CI_COMMIT_REF_PROTECTED == "false" ]; then sudo -E -u makepkg makepkg -si --skipchecksums --noconfirm; else sudo -E -u makepkg makepkg -si --noconfirm; fi
+    - vpnm -h
+  artifacts:
+    paths:
+      - PKGBUILD
+      - .SRCINFO
+
+deploy_package_archlinux:
+  stage: deploy
+  extends: .git_setup_archlinux
+  script:
+    - cp CHANGELOG.md "$AUR_REPOSITORY_PATH/CHANGELOG.md"
+    - cp PKGBUILD "$AUR_REPOSITORY_PATH/PKGBUILD"
+    - cp .SRCINFO "$AUR_REPOSITORY_PATH/.SRCINFO"
+    - echo '####### PKG INFO TO BE DEPLOYED'
+    - cat "$AUR_REPOSITORY_PATH/.SRCINFO"
+    - echo '####### END OF PKG INFO TO BE DEPLOYED'
+    - cd "$AUR_REPOSITORY_PATH"
+    - git config --global user.email "$AUR_MAINTAINER_EMAIL"
+    - git config --global user.name "vpnm CI CD"
+    - git add -u
+    - git commit -m "new package version ${CI_COMMIT_TAG}-$PKGREL"
+    - git push origin master

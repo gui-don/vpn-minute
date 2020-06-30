@@ -10,11 +10,12 @@ license=("GPL3")
 depends=("terraform>=0.12.25", "ldns>=1.7", "wireguard-tools>=1", "jq>=1", "sudo")
 optdepends=("openssh: to SSH to the VPN")
 provides=("vpnm")
+changelog="CHANGELOG.md"
 source=("https://gitlab.com/gui-don/$pkgname/-/archive/$pkgver/vpn-minute-$pkgver.tar.gz")
 b2sums=("<#B2SUM>")
 
 package() {
   cd "$pkgname-$pkgver"
 
-  ./install.sh "$pkgdir" "$pkgname"
+  install/install.sh "$pkgdir" "$pkgname"
 }
