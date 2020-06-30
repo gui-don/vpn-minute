@@ -1,0 +1,15 @@
+stages:
+  - deploy
+
+image: alpine:3.12
+
+deploy_aur:
+  stage: deploy
+  script:
+    - install/generate_pkgbuild.sh "${CI_COMMIT_TAG}" ""
+    - cat PKGBUILD
+  only:
+    - tags
+    - /^v?[0-9]+\.[0-9]+\.[0-9]+$/
+#  except:
+#    - branches
