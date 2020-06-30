@@ -4,8 +4,6 @@ current_path="$(dirname "$0")"
 pkgdir="$1"
 pkgname="$2"
 
-echo $(ls "$current_path"/../)
-
 install -Dm644 README.md "$pkgdir/usr/share/doc/${pkgname}/README.md"
 
 install -Dm755 main.sh "$pkgdir/usr/bin/vpnm"
