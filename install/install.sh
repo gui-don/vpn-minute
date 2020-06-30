@@ -1,8 +1,10 @@
 #!/usr/bin/env sh
 
-local current_path=$(dirname "$(readlink -f "$0")")
-local pkgdir="$1"
-local pkgname="$2"
+current_path="$(dirname "$0")"
+pkgdir="$1"
+pkgname="$2"
+
+echo $(ls "$current_path"/../)
 
 install -Dm644 README.md "$pkgdir/usr/share/doc/${pkgname}/README.md"
 
