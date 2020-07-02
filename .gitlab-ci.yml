@@ -71,9 +71,6 @@ build_package_archlinux_for_test:
       - PKGBUILD
       - .SRCINFO
       - "*.tar.gz"
-  only:
-    variables:
-      - $CI_COMMIT_REF_PROTECTED == "false"
   except:
     refs:
       - /^v?[0-9]+\.[0-9]+\.[0-9]+$/
