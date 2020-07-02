@@ -72,10 +72,11 @@ build_package_archlinux_for_test:
       - .SRCINFO
       - "*.tar.gz"
   only:
-    refs:
-      - /(?!^v?[0-9]+\.[0-9]+\.[0-9]+$)/
     variables:
       - $CI_COMMIT_REF_PROTECTED == "false"
+  except:
+    refs:
+      - /^v?[0-9]+\.[0-9]+\.[0-9]+$/
 
 test_package_archlinux:
   stage: test
