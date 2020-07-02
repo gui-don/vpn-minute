@@ -82,7 +82,7 @@ test_package_archlinux:
     - useradd -m -G wheel makepkg
     - sed -i 's/^#\s*\(%wheel\s*ALL=(ALL)\s*NOPASSWD:\s*ALL\)/\1/' /etc/sudoers
   script:
-    - if [ $CI_COMMIT_REF_PROTECTED == "false" ]; then sudo -E -u makepkg makepkg -si --skipchecksums --noconfirm; else sudo -E -u makepkg makepkg -si --noconfirm; fi
+    - if [ -z "$CI_COMMIT_TAG" ]; then sudo -E -u makepkg makepkg -si --skipchecksums --noconfirm; else sudo -E -u makepkg makepkg -si --noconfirm; fi
     - vpnm -h
   artifacts:
     paths:
