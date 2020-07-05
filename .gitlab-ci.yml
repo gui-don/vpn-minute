@@ -63,7 +63,7 @@ unit:7.4:
 
 unit:rc:
   extends: .unit_template
-  stage: test_edge
+  stage: test
   image: registry.gitlab.com/gui-don/moustache-ci-docker:rc
   allow_failure: true
   only:
@@ -89,7 +89,7 @@ func:7.4:
 
 func:rc:
   extends: .func_template
-  stage: test_edge
+  stage: test
   image: registry.gitlab.com/gui-don/moustache-ci-docker:rc
   allow_failure: true
   only:
