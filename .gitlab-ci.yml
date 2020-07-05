@@ -1,14 +1,116 @@
 stages:
+  - static_analysis
   - build
   - test
   - deploy
 
-image: archlinux:latest
+image: registry.gitlab.com/gui-don/moustache-ci-docker:7.4
+
+cache:
+  paths:
+    - vendor/
+
+before_script:
+  - php bin/composer.phar install -o --no-interaction
+
+###
+# Static analysis
+###
+
+code_style:
+  stage: static_analysis
+  script:
+    - php vendor/bin/php-cs-fixer fix --allow-risky yes --dry-run
+
+sast:
+  stage: static_analysis
+  script:
+    - chmod +x ./vendor/pheromone/phpcs-security-audit/symlink.sh
+    - ./vendor/pheromone/phpcs-security-audit/symlink.sh
+    - ./vendor/bin/phpcs -p --error-severity=1 --warning-severity=6 --standard=./vendor/pheromone/phpcs-security-audit/example_base_ruleset.xml --extensions=php,inc,lib,module,info src
+    - ./vendor/bin/phpcs -p --error-severity=1 --warning-severity=1 --standard=./vendor/pheromone/phpcs-security-audit/example_base_ruleset.xml --extensions=lib,module,inf vendor
+
+stan:
+  stage: static_analysis
+  script:
+    - vendor/bin/phpstan analyse src --level 5
+
+###
+# Unit tests
+###
+
+.unit_template:
+  stage: test
+  script:
+    - php vendor/bin/phpspec -c config/test/phpspec.yml --no-interaction -v run core
+
+unit:coverage:
+  stage: test
+  image: registry.gitlab.com/gui-don/moustache-ci-docker:coverage
+  script: vendor/bin/phpspec --config config/test/phpspec_coverage.yml --no-interaction -v run
+  coverage: '/^\s*Lines:\s*\d+.\d+\%/'
+  artifacts:
+    paths:
+      - coverage.xml
+
+unit:7.3:
+  extends: .unit_template
+  image: registry.gitlab.com/gui-don/moustache-ci-docker:7.3
+
+unit:7.4:
+  extends: .unit_template
+  image: registry.gitlab.com/gui-don/moustache-ci-docker:7.4
+
+unit:rc:
+  extends: .unit_template
+  stage: test_edge
+  image: registry.gitlab.com/gui-don/moustache-ci-docker:rc
+  allow_failure: true
+  only:
+    variables:
+      - $SCHEDULE == "edge"
+
+###
+# Functional tests
+###
+
+.func_template:
+  stage: test
+  script:
+    - vendor/bin/behat --config config/test/behat.yml --suite=core_suite
+
+func:7.3:
+  extends: .func_template
+  image: registry.gitlab.com/gui-don/moustache-ci-docker:7.3
+
+func:7.4:
+  extends: .func_template
+  image: registry.gitlab.com/gui-don/moustache-ci-docker:7.4
+
+func:rc:
+  extends: .func_template
+  stage: test_edge
+  image: registry.gitlab.com/gui-don/moustache-ci-docker:rc
+  allow_failure: true
+  only:
+    variables:
+      - $SCHEDULE == "edge"
+
+###
+# Deployement
+###
+
+# Not implemented yet
+
+###
+# Legacy
+###
 
 variables:
   AUR_REPOSITORY_PATH: "/tmp/aur-$CI_PROJECT_TITLE"
 
 .git_setup_archlinux:
+  image: archlinux:latest
   before_script:
     - pacman -Suy --noconfirm git openssh
     - mkdir ~/.ssh/
@@ -51,6 +153,7 @@ build_package_archlinux:
     - cp /tmp/.SRCINFO .SRCINFO
 
 build_package_archlinux_for_test:
+  image: archlinux:latest
   stage: build
   before_script:
     - pacman -Sy --noconfirm sudo base-devel
@@ -76,6 +179,7 @@ build_package_archlinux_for_test:
       - /^v?[0-9]+\.[0-9]+\.[0-9]+$/
 
 test_package_archlinux:
+  image: archlinux:latest
   stage: test
   before_script:
     - pacman -Sy --noconfirm base-devel
