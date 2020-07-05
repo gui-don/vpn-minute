@@ -11,7 +11,7 @@ cache:
     - vendor/
 
 before_script:
-  - php bin/composer.phar install -o --no-interaction
+  - composer install -o --no-interaction
 
 ###
 # Static analysis
