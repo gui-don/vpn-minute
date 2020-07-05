@@ -21,7 +21,7 @@ before_script:
 code_style:
   stage: static_analysis
   script:
-    - php vendor/bin/php-cs-fixer fix --allow-risky yes --dry-run
+    - vendor/bin/php-cs-fixer fix --dry-run --allow-risky yes --config config/test/phpcsfixer.dist src test
 
 sast:
   stage: static_analysis
