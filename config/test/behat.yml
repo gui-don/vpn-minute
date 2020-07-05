@@ -1,0 +1,11 @@
+default:
+    autoload:
+        "": "%paths.base%/../../test/Functional/"
+
+    suites:
+        core_suite:
+            paths:
+                features: "%paths.base%/../../test/Functional/Core/"
+                bootstrap: "%paths.base%/../../test/Functional"
+            contexts:
+                - VPNMinuteContext
