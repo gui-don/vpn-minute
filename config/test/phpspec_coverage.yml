@@ -1,0 +1,18 @@
+suites:
+    core:
+        namespace: 'VPNMinute\Core'
+        spec_prefix: 'Spec'
+        psr4_prefix: 'VPNMinute'
+        src_path: "%paths.config%/../../src"
+        spec_path: "%paths.config%/../../test"
+        bootstrap: "%paths.config%/../../vendor/composer/autoload_real.php"
+
+extensions:
+    FriendsOfPhpSpec\PhpSpec\CodeCoverage\CodeCoverageExtension:
+        format:
+            - html
+            - clover
+            - text
+        output:
+            html: coverage
+            clover: coverage.xml
