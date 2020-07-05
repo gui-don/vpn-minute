@@ -15,7 +15,7 @@ class VPNMinuteContext implements Context
     {
         ob_start();
 
-        include __DIR__. '/../../main.php';
+        include __DIR__.'/../../main.php';
 
         $output = ob_get_contents();
 
