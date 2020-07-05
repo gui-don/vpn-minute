@@ -11,6 +11,7 @@ cache:
     - vendor/
 
 before_script:
+  - php --version
   - composer install -o --no-interaction
 
 ###
