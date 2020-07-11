@@ -43,7 +43,7 @@ stan:
 .unit_template:
   stage: test
   script:
-    - php vendor/bin/phpspec -c config/test/phpspec.yml --no-interaction -v run core
+    - php vendor/bin/phpspec -c config/test/phpspec.yml --no-interaction -v run test/Spec/Core
 
 unit:coverage:
   stage: test
