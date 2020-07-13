@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Spec\VPNMinute\Core\DI;
 
 use PhpSpec\ObjectBehavior;
-use VPNMinute\Core\DI\ContainerLoader;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use VPNMinute\Core\DI\ContainerLoader;
 
 class ContainerLoaderSpec extends ObjectBehavior
 {

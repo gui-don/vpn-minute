@@ -10,7 +10,7 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 class ContainerLoader
 {
-    const SERVICE_CONFIGURATION_FILE = __DIR__.'/../../../config/service/services.yml';
+    public const SERVICE_CONFIGURATION_FILE = __DIR__.'/../../../config/service/services.yml';
 
     public function load(): ContainerBuilder
     {
