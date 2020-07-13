@@ -9,6 +9,8 @@
     "php": "^7.3, <7.5",
     "ext-mbstring": "*",
 
+    "symfony/config": "^5",
+    "symfony/dependency-injection": "^5",
     "gui-don/rico-library": "^1"
   },
   "require-dev": {
