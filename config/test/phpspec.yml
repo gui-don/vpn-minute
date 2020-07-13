@@ -5,4 +5,3 @@ suites:
         psr4_prefix: 'VPNMinute'
         src_path: "%paths.config%/../../src"
         spec_path: "%paths.config%/../../test"
-        bootstrap: "%paths.config%/../../vendor/composer/autoload_real.php"
