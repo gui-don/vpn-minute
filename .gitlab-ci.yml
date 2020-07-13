@@ -34,10 +34,13 @@ code_style:
 
 sast:
   stage: static_analysis
+  artifacts:
+    reports:
+      sast: gl-sast-report.json
   script:
     - chmod +x ./vendor/pheromone/phpcs-security-audit/symlink.sh
     - ./vendor/pheromone/phpcs-security-audit/symlink.sh
-    - ./vendor/bin/phpcs -p --error-severity=1 --warning-severity=6 --standard=./vendor/pheromone/phpcs-security-audit/example_base_ruleset.xml --extensions=php,inc,lib,module,info src
+    - ./vendor/bin/phpcs -p --error-severity=1 --report=json --report-file=gl-sast-report.json --warning-severity=6 --standard=./vendor/pheromone/phpcs-security-audit/example_base_ruleset.xml --extensions=php,inc,lib,module,info src
     - ./vendor/bin/phpcs -p --error-severity=1 --warning-severity=1 --standard=./vendor/pheromone/phpcs-security-audit/example_base_ruleset.xml --extensions=lib,module,inf vendor
 
 stan:
