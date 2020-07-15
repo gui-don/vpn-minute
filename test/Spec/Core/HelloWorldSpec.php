@@ -13,4 +13,9 @@ class HelloWorldSpec extends ObjectBehavior
     {
         $this->shouldHaveType(HelloWorld::class);
     }
+
+    public function it_displays_hello_world()
+    {
+        $this->display();
+    }
 }
