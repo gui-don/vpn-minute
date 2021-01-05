@@ -135,7 +135,7 @@ variables:
     refs:
       - /^v?[0-9]+\.[0-9]+\.[0-9]+$/
     variables:
-      - $CI_COMMIT_REF_PROTECTED
+      - $CI_COMMIT_REF_PROTECTED == "true"
   except:
     - schedules
     - api
