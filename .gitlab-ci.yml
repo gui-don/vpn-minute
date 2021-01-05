@@ -118,12 +118,10 @@ variables:
     - export
     - pacman -Suy --noconfirm git openssh
     - mkdir ~/.ssh/
-    - echo '####### KNOWN HOST FOR AUR IS:'
     - ssh-keyscan -4 aur.archlinux.org
     - echo "$AUR_PUBLIC_KEY" > ~/.ssh/id_ed25519.pub
     - echo "$AUR_PRIVATE_KEY_BASE_64" | base64 -d > ~/.ssh/id_ed25519
     - echo "$AUR_KNOWN_HOSTS_BASE_64" | base64 -d > ~/.ssh/known_hosts
-    - echo '####### KNOWN HOST CONFIGURED FOR AUR IS:'
     - cat ~/.ssh/known_hosts
     - chmod 400 ~/.ssh/id_ed25519
     - git clone ssh://aur@aur.archlinux.org/$CI_PROJECT_TITLE.git "$AUR_REPOSITORY_PATH"
@@ -209,12 +207,11 @@ deploy_package_archlinux:
     - cp CHANGELOG.md "$AUR_REPOSITORY_PATH/CHANGELOG.md"
     - cp PKGBUILD "$AUR_REPOSITORY_PATH/PKGBUILD"
     - cp .SRCINFO "$AUR_REPOSITORY_PATH/.SRCINFO"
-    - echo '####### PKG INFO TO BE DEPLOYED'
     - cat "$AUR_REPOSITORY_PATH/.SRCINFO"
-    - echo '####### END OF PKG INFO TO BE DEPLOYED'
     - cd "$AUR_REPOSITORY_PATH"
     - git config --global user.email "$AUR_MAINTAINER_EMAIL"
     - git config --global user.name "vpnm CI CD"
+    - ls
     - git add .
     - git commit -m "new package version ${CI_COMMIT_TAG}-$PKGREL"
     - git push origin master
