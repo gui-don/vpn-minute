@@ -74,14 +74,9 @@ unit:7.4:
   extends: .unit_template
   image: registry.gitlab.com/gui-don/moustache-ci-docker:7.4
 
-unit:rc:
+unit:8.0:
   extends: .unit_template
-  stage: test
-  image: registry.gitlab.com/gui-don/moustache-ci-docker:rc
-  allow_failure: true
-  only:
-    variables:
-      - $SCHEDULE == "edge"
+  image: registry.gitlab.com/gui-don/moustache-ci-docker:8.0
 
 ###
 # Functional tests
