@@ -28,7 +28,7 @@ include:
 code_style:
   stage: static_analysis
   script:
-    - vendor/bin/php-cs-fixer fix --dry-run --allow-risky yes --config config/test/phpcsfixer.dist src test
+    - vendor/bin/php-cs-fixer fix --dry-run --allow-risky yes --config config/test/phpcsfixer.dist src test main.php
 
 sast:
   stage: static_analysis
@@ -44,7 +44,7 @@ sast:
 stan:
   stage: static_analysis
   script:
-    - vendor/bin/phpstan analyse src --level 5
+    - vendor/bin/phpstan analyse src main.php --level 5
 
 ###
 # Unit tests

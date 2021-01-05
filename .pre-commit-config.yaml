@@ -5,6 +5,21 @@ repos:
       - id: terraform_fmt
       - id: terraform_docs
       - id: terraform_tflint
+  - repo: https://github.com/digitalpulp/pre-commit-php.git
+    rev: 1.4.0
+    hooks:
+      - id: php-lint
+      - id: php-stan
+        args:
+          # Dirty trick with the // to makes sure any argument after src is ignored
+          - --level 5 src main.sh //
+      - id: php-cs-fixer
+        args:
+          - --config=config/test/phpcsfixer.dist
+          - --allow-risky=yes
+          - src
+          - test
+          - main.php
   - repo: git://github.com/pre-commit/pre-commit-hooks
     rev: v3.4.0
     hooks:
@@ -13,3 +28,6 @@ repos:
       - id: end-of-file-fixer
       - id: check-added-large-files
       - id: detect-private-key
+      - id: check-json
+      - id: check-yaml
+      - id: no-commit-to-branch

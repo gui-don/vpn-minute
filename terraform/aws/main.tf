@@ -175,7 +175,7 @@ resource "aws_spot_fleet_request" "this" {
 ####
 
 resource "aws_ssm_parameter" "this_known_hosts" {
-  count  = var.allow_ssh ? 1 : 0
+  count = var.allow_ssh ? 1 : 0
 
   name        = "/${local.prefix}/${local.uuid}/known-hosts"
   description = "${var.application_name} server ${local.uuid} known hosts in base64."
@@ -233,7 +233,7 @@ resource "aws_iam_role_policy_attachment" "this_spotfleet" {
 }
 
 data "aws_iam_policy_document" "this" {
-  count  = var.allow_ssh ? 1 : 0
+  count = var.allow_ssh ? 1 : 0
 
   statement {
     sid = "VPNMAllowReadSSMParameterAccess"
@@ -256,7 +256,7 @@ data "aws_iam_policy_document" "this" {
 }
 
 data "aws_iam_policy_document" "sts_instance" {
-  count  = var.allow_ssh ? 1 : 0
+  count = var.allow_ssh ? 1 : 0
 
   statement {
     actions = ["sts:AssumeRole"]
@@ -271,7 +271,7 @@ data "aws_iam_policy_document" "sts_instance" {
 }
 
 resource "aws_iam_policy" "this_instance_profile" {
-  count  = var.allow_ssh ? 1 : 0
+  count = var.allow_ssh ? 1 : 0
 
   name        = "plc-${local.name}"
   path        = "/"
@@ -280,7 +280,7 @@ resource "aws_iam_policy" "this_instance_profile" {
 }
 
 resource "aws_iam_role" "this_instance_profile" {
-  count  = var.allow_ssh ? 1 : 0
+  count = var.allow_ssh ? 1 : 0
 
   name = "rol-ipr-${local.name}"
 
@@ -297,14 +297,14 @@ resource "aws_iam_role" "this_instance_profile" {
 }
 
 resource "aws_iam_role_policy_attachment" "this_instance_profile" {
-  count  = var.allow_ssh ? 1 : 0
+  count = var.allow_ssh ? 1 : 0
 
   role       = element(aws_iam_role.this_instance_profile.*.id, 0)
   policy_arn = element(aws_iam_policy.this_instance_profile.*.arn, 0)
 }
 
 resource "aws_iam_instance_profile" "this" {
-  count  = var.allow_ssh ? 1 : 0
+  count = var.allow_ssh ? 1 : 0
 
   name = "ipr-${local.name}"
   path = "/"
