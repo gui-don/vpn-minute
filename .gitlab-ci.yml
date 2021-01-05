@@ -95,14 +95,9 @@ func:7.4:
   extends: .func_template
   image: registry.gitlab.com/gui-don/moustache-ci-docker:7.4
 
-func:rc:
+func:8.0:
   extends: .func_template
-  stage: test
-  image: registry.gitlab.com/gui-don/moustache-ci-docker:rc
-  allow_failure: true
-  only:
-    variables:
-      - $SCHEDULE == "edge"
+  image: registry.gitlab.com/gui-don/moustache-ci-docker:8.0
 
 ###
 # Deployement

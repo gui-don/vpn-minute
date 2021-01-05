@@ -6,7 +6,7 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": "^7.3, <7.5",
+    "php": "^7.3, <8.0",
     "ext-mbstring": "*",
 
     "symfony/config": "^5",
@@ -16,12 +16,12 @@
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^2",
     "pheromone/phpcs-security-audit": "^2.0",
-    "phpunit/phpunit": "^8",
-    "phpunit/php-code-coverage": "^7",
+    "phpunit/phpunit": "^9",
+    "phpunit/php-code-coverage": "^9",
     "phpstan/phpstan": "^0.12.0",
     "behat/behat": "^3.8@dev",
-    "phpspec/phpspec": "^6.2.0",
-    "friends-of-phpspec/phpspec-code-coverage": "^4"
+    "phpspec/phpspec": "^7.0",
+    "friends-of-phpspec/phpspec-code-coverage": "^6"
   },
   "autoload": {
     "psr-4": {
