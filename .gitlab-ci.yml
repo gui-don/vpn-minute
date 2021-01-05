@@ -19,9 +19,7 @@ before_script:
 ###
 
 include:
-  - project: 'gitlab-org/gitlab'
-    ref: master
-    file: '/lib/gitlab/ci/templates/Security/Dependency-Scanning.gitlab-ci.yml'
+  - template: Dependency-Scanning.gitlab-ci.yml
 
 ###
 # Static analysis
