@@ -63,6 +63,8 @@ unit:coverage:
   artifacts:
     paths:
       - coverage.xml
+  variables:
+    XDEBUG_MODE: coverage
 
 unit:7.3:
   extends: .unit_template
