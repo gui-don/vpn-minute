@@ -115,7 +115,6 @@ variables:
 .git_setup_archlinux:
   image: archlinux:latest
   before_script:
-    - export
     - pacman -Suy --noconfirm git openssh
     - mkdir ~/.ssh/
     - ssh-keyscan -4 aur.archlinux.org
