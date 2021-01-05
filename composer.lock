@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "532787c4551579adc7e7ec2c9598c6b3",
+    "content-hash": "36dad190b27b82fd4db3d601dda989fa",
     "packages": [
         {
             "name": "gui-don/rico-library",
@@ -5108,7 +5108,7 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^7.3, <8.0",
+        "php": ">7.3, <8.0",
         "ext-mbstring": "*"
     },
     "platform-dev": [],
