@@ -215,6 +215,6 @@ deploy_package_archlinux:
     - cd "$AUR_REPOSITORY_PATH"
     - git config --global user.email "$AUR_MAINTAINER_EMAIL"
     - git config --global user.name "vpnm CI CD"
-    - git add -u
+    - git add .
     - git commit -m "new package version ${CI_COMMIT_TAG}-$PKGREL"
     - git push origin master
