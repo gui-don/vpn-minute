@@ -123,7 +123,6 @@ variables:
     - echo "$AUR_PRIVATE_KEY_BASE_64" | base64 -d > ~/.ssh/id_ed25519
     - echo "$AUR_KNOWN_HOSTS_BASE_64" | base64 -d > ~/.ssh/known_hosts
     - echo '####### KNOWN HOST CONFIGURED FOR AUR IS:'
-    - ssh-keygen -F aur.archlinux.org
     - cat ~/.ssh/known_hosts
     - chmod 400 ~/.ssh/id_ed25519
     - git clone ssh://aur@aur.archlinux.org/$CI_PROJECT_TITLE.git "$AUR_REPOSITORY_PATH"
