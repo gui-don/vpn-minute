@@ -115,6 +115,7 @@ variables:
 .git_setup_archlinux:
   image: archlinux:latest
   before_script:
+    - export
     - pacman -Suy --noconfirm git openssh
     - mkdir ~/.ssh/
     - echo '####### KNOWN HOST FOR AUR IS:'
