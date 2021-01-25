@@ -1,8 +1,6 @@
 #!/usr/bin/env php
 <?php
 
-declare(strict_types=1);
-
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Finder\Finder;
 use VPNMinute\Core\DI\ContainerLoader;
@@ -25,7 +23,7 @@ class main
         echo 'This Code still brings no feature. Job in progress.'.\PHP_EOL;
 
         $infrastructureProvisioner = $container->get(InfrastructureProvisioner::class);
-        echo $infrastructureProvisioner->getName();
+        echo 'Infrastucture provisionner: '.$infrastructureProvisioner->getName();
     }
 
     private function prepareContainer(): ContainerBuilder

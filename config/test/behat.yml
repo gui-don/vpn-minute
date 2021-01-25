@@ -9,3 +9,9 @@ default:
                 bootstrap: "%paths.base%/../../test/Functional"
             contexts:
                 - VPNMinuteContext
+        infrastructure_Provisioner_suite:
+            paths:
+                features: "%paths.base%/../../test/Functional/Core/"
+                bootstrap: "%paths.base%/../../test/Functional"
+            contexts:
+                - VPNMinuteContext

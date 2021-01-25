@@ -54,6 +54,7 @@ stan:
   stage: test
   script:
     - php vendor/bin/phpspec -c config/test/phpspec.yml --no-interaction -v run test/Spec/Core
+    - php vendor/bin/phpspec -c config/test/phpspec.yml --no-interaction -v run test/Spec/InfrastructureProvisioner
 
 unit:coverage:
   stage: test

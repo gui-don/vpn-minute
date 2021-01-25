@@ -5,3 +5,9 @@ suites:
         psr4_prefix: 'VPNMinute'
         src_path: "%paths.config%/../../src"
         spec_path: "%paths.config%/../../test"
+    infrastucture_tool:
+        namespace: 'VPNMinute\InfrastructureProvisioner'
+        spec_prefix: 'Spec'
+        psr4_prefix: 'VPNMinute'
+        src_path: "%paths.config%/../../src"
+        spec_path: "%paths.config%/../../test"
