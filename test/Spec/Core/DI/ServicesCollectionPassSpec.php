@@ -38,7 +38,7 @@ class ServicesCollectionPassSpec extends ObjectBehavior
 
     public function it_processes_and_add_method_calls($container, $definition)
     {
-        $definition->addMethodCall(Argument::any(), Argument::type(Reference::class))->shouldBeCalledTimes(2);
+        $definition->addMethodCall(Argument::any(), Argument::any())->shouldBeCalledTimes(2);
 
         $this->process($container);
     }
