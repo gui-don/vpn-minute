@@ -11,7 +11,9 @@
 
     "symfony/config": "^5",
     "symfony/dependency-injection": "^5",
-    "gui-don/rico-library": "^1"
+    "symfony/yaml": "^5",
+    "symfony/finder": "^5",
+    "gui-don/rico-library": "^3"
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^2",
