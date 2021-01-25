@@ -85,6 +85,9 @@ unit:8.0:
 
 .func_template:
   stage: test
+  before_script:
+    - mkdir /etc/vpnm
+    - cp config/config.yml /etc/vpnm/
   script:
     - vendor/bin/behat --config config/test/behat.yml --suite=core_suite
 
