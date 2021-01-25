@@ -1,0 +1,10 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: true
+
+  VPNMinute\Core\:
+    resource: '../../../src/Core/*'
+    exclude: '../../../src/Core/DI/ContainerLoader.php'
+    public: true
