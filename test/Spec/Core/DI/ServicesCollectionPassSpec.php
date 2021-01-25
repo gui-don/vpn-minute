@@ -9,7 +9,6 @@ use Prophecy\Argument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
-use Symfony\Component\DependencyInjection\Reference;
 use VPNMinute\Core\DI\ServicesCollectionPass;
 use VPNMinute\Core\Exception\InternalConfigurationException;
 
