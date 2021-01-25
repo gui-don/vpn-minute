@@ -1,5 +1,6 @@
 ## 0.3.0 (unreleased)
 
+- feat: removes support for PHP 7.3
 - feat: adds Fetcher infrastructure and first example with InfrastructureProvisioner
 - feat: removes HelloWorld example class
 - chore: updates dependencies
@@ -16,4 +17,3 @@
 ## 0.1.0
 
 - feat: first version
-gitg

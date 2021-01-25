@@ -67,10 +67,6 @@ unit:coverage:
   variables:
     XDEBUG_MODE: coverage
 
-unit:7.3:
-  extends: .unit_template
-  image: registry.gitlab.com/gui-don/moustache-ci-docker:7.3
-
 unit:7.4:
   extends: .unit_template
   image: registry.gitlab.com/gui-don/moustache-ci-docker:7.4
@@ -90,10 +86,6 @@ unit:8.0:
     - cp config/config.yml /etc/vpnm/
   script:
     - vendor/bin/behat --config config/test/behat.yml --suite=core_suite
-
-func:7.3:
-  extends: .func_template
-  image: registry.gitlab.com/gui-don/moustache-ci-docker:7.3
 
 func:7.4:
   extends: .func_template
