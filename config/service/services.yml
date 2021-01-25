@@ -6,4 +6,44 @@ services:
 
   VPNMinute\Core\:
     resource: '../../../src/Core/*'
+    exclude: '../../../src/Core/DI/*'
+    public: true
+    lazy: true
+
+  VPNMinute\Core\Assembly\AssemblyDeliberationCacheProxy:
+    decorates: 'VPNMinute\Core\Assembly\Assembly'
+
+  # Infrastructure provisioner
+
+  VPNMinute\Core\Voter\InfrastructureProvisioner\:
+    resource: '../../../src/Core/Voter/InfrastructureProvisioner/*'
+    public: true
+    tags:
+      - { name: 'voter', class: 'InfrastructureProvisionerAssembly' }
+
+  VPNMinute\Core\Bag\InfrastructureProvisionerBag:
+    class: 'VPNMinute\Core\Bag\CanBeFetchedBag'
+    public: true
+
+  VPNMinute\Core\Assembly\InfrastructureProvisionerAssembly:
+    class: 'VPNMinute\Core\Assembly\Assembly'
+    public: true
+    calls:
+      - setSubject: ['infrastructureProvisioner']
+      - setMethod: [3]
+
+  VPNMinute\Core\Assembly\InfrastructureProvisionerAssemblyDeliberationCacheProxy:
+    class: '\VPNMinute\Core\Assembly\AssemblyDeliberationCacheProxy'
+    arguments:
+      $canDeliberate: '@VPNMinute\Core\Assembly\InfrastructureProvisionerAssembly'
+    public: true
+
+  VPNMinute\Core\Fetcher\InfrastructureProvisionerFetcher:
+    class: '\VPNMinute\Core\Fetcher\Fetcher'
+    arguments:
+      $assemblyDeliberationCacheProxy: '@VPNMinute\Core\Assembly\InfrastructureProvisionerAssemblyDeliberationCacheProxy'
+      $canBeFetchedClass: '@VPNMinute\Core\Bag\InfrastructureProvisionerBag'
+
+  VPNMinute\Core\InfrastructureProvisioner:
+    factory: ['@VPNMinute\Core\Fetcher\InfrastructureProvisionerFetcher', 'get']
     public: true

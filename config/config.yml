@@ -1,0 +1,6 @@
+# Contains infrastructure Provisioners choices and options
+infrastructure_Provisioner:
+    # Ordered list of infrastructure Provisioner to use.
+    # VPN Minute will read the list in order to determine the best choices
+    # It might end up choosing an element farther in the list depending on other factors like pricing configurations.
+    enable: ['terraform']
