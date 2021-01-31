@@ -2,10 +2,9 @@ services:
   _defaults:
     autowire: true
     autoconfigure: true
-    public: true
+    public: false
 
   VPNMinute\InfrastructureProvisioner\Terraform:
     class: '\VPNMinute\InfrastructureProvisioner\Terraform'
-    public: true
     tags:
       - { name: 'can_be_fetched', class: 'InfrastructureProvisionerBag' }

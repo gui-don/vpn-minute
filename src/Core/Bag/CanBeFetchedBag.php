@@ -9,7 +9,7 @@ use VPNMinute\Core\CanBeFetched;
 /**
  * Bag of objects that CanBeFetched.
  */
-class CanBeFetchedBag implements CanStoreObjectCollection
+class CanBeFetchedBag implements CanStoreFetchableCollection
 {
     /**
      * @var CanBeFetched[]
@@ -25,6 +25,9 @@ class CanBeFetchedBag implements CanStoreObjectCollection
         return $this->bag[$name];
     }
 
+    /**
+     * @return CanBeFetched[]
+     */
     public function getAll(): array
     {
         return $this->bag;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace VPNMinute\Core\Assembly;
 
 /**
- * Proxy to InfrastructureProvisionerAssembly. This proxy caches the deliberation results.
+ * Proxy to Assembly. This proxy caches the deliberation results.
  */
 class AssemblyDeliberationCacheProxy
 {

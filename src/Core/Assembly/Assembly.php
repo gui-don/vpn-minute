@@ -9,7 +9,7 @@ use VPNMinute\Core\Exception\InternalConfigurationException;
 use VPNMinute\Core\Voter\CanVote;
 
 /**
- * Abstract class to deliberate on a $subject using $method thanks to $voters.
+ *  lass to deliberate on a $subject using $method thanks to $voters.
  */
 class Assembly implements CanDeliberate
 {

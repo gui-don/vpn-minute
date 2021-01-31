@@ -19,7 +19,7 @@ class VPNMinuteContext implements Context
 
         $output = ob_get_contents();
 
-        if (strstr($this->expected_output, $output)) {
+        if (!strstr($output, $this->expected_output)) {
             throw new \Exception("Cannot assert that “ $output ” contains “ $this->expected_output ”");
         }
     }

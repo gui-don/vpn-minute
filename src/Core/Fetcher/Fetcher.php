@@ -54,9 +54,9 @@ class Fetcher implements CanFetch
 
     private function do_fetch(): ?CanBeFetched
     {
-        foreach ($this->assemblyDeliberationCacheProxy->getDeliberation([]) as $infrastructureProvisioner) {
-            if ($this->canBeFetchedBag->contain($infrastructureProvisioner)) {
-                return $this->canBeFetchedBag->get($infrastructureProvisioner);
+        foreach ($this->assemblyDeliberationCacheProxy->getDeliberation([]) as $canBeFetched) {
+            if ($this->canBeFetchedBag->contain($canBeFetched)) {
+                return $this->canBeFetchedBag->get($canBeFetched);
             }
         }
 

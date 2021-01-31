@@ -6,7 +6,7 @@ namespace Spec\VPNMinute\Core\Bag;
 
 use PhpSpec\ObjectBehavior;
 use VPNMinute\Core\Bag\CanBeFetchedBag;
-use VPNMinute\Core\Bag\CanStoreObjectCollection;
+use VPNMinute\Core\Bag\CanStoreFetchableCollection;
 use VPNMinute\Core\CanBeFetched;
 
 class CanBeFetchedBagSpec extends ObjectBehavior
@@ -24,7 +24,7 @@ class CanBeFetchedBagSpec extends ObjectBehavior
 
     public function it_is_a_can_store_object_collection()
     {
-        $this->shouldImplement(CanStoreObjectCollection::class);
+        $this->shouldImplement(CanStoreFetchableCollection::class);
     }
 
     public function it_can_store_and_return_can_be_fetched_objects($obj1, $obj2)

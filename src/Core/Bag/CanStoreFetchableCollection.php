@@ -6,7 +6,7 @@ namespace VPNMinute\Core\Bag;
 
 use VPNMinute\Core\CanBeFetched;
 
-interface CanStoreObjectCollection
+interface CanStoreFetchableCollection
 {
     public function get(string $name): ?CanBeFetched;
 

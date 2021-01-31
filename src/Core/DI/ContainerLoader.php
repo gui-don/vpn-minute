@@ -12,6 +12,9 @@ use Symfony\Component\Finder\Finder;
 use VPNMinute\Core\Constants;
 use VPNMinute\Core\Exception\InternalConfigurationException;
 
+/**
+ * Load the container using configuration files.
+ */
 class ContainerLoader
 {
     public const SERVICE_CONFIGURATION_SYSTEM_DIR = '/etc/'.Constants::PROGRAM_NAME_SMALL.'/service/';

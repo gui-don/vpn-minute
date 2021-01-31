@@ -9,13 +9,15 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use VPNMinute\Core\Exception\InternalConfigurationException;
 
+/**
+ * Pass tagged services to other bag services.
+ */
 class ServicesCollectionPass implements CompilerPassInterface
 {
     public const COLLECTOR_SERVICES = [
         'voter' => 'VPNMinute\Core\Assembly\%s',
         'can_be_fetched' => 'VPNMinute\Core\Bag\%s',
     ];
-    public const COLLECTOR_SERVICES_TAGS = ['voter', 'can_be_fetched'];
 
     public const COLLECTOR_CLASS_KEY = 'class';
 
@@ -36,7 +38,7 @@ class ServicesCollectionPass implements CompilerPassInterface
      */
     public function process(ContainerBuilder $container)
     {
-        foreach (self::COLLECTOR_SERVICES_TAGS as $collectorCategory) {
+        foreach (array_keys(self::COLLECTOR_SERVICES) as $collectorCategory) {
             $taggedServices = $this->container->findTaggedServiceIds($collectorCategory);
 
             foreach ($taggedServices as $id => $tags) {

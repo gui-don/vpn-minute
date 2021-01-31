@@ -7,7 +7,6 @@ services:
   VPNMinute\Core\:
     resource: '../../../src/Core/*'
     exclude: '../../../src/Core/DI/*'
-    public: true
     lazy: true
 
   VPNMinute\Core\Assembly\AssemblyDeliberationCacheProxy:
@@ -17,17 +16,14 @@ services:
 
   VPNMinute\Core\Voter\InfrastructureProvisioner\:
     resource: '../../../src/Core/Voter/InfrastructureProvisioner/*'
-    public: true
     tags:
       - { name: 'voter', class: 'InfrastructureProvisionerAssembly' }
 
   VPNMinute\Core\Bag\InfrastructureProvisionerBag:
     class: 'VPNMinute\Core\Bag\CanBeFetchedBag'
-    public: true
 
   VPNMinute\Core\Assembly\InfrastructureProvisionerAssembly:
     class: 'VPNMinute\Core\Assembly\Assembly'
-    public: true
     calls:
       - setSubject: ['infrastructureProvisioner']
       - setMethod: [3]
@@ -36,7 +32,6 @@ services:
     class: '\VPNMinute\Core\Assembly\AssemblyDeliberationCacheProxy'
     arguments:
       $canDeliberate: '@VPNMinute\Core\Assembly\InfrastructureProvisionerAssembly'
-    public: true
 
   VPNMinute\Core\Fetcher\InfrastructureProvisionerFetcher:
     class: '\VPNMinute\Core\Fetcher\Fetcher'

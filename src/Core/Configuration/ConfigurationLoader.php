@@ -15,7 +15,7 @@ use VPNMinute\Core\Exception\IOException;
 class ConfigurationLoader
 {
     public const DEFAULT_PATH = '/etc/vpnm/config.yml';
-    public const KEY_INFRASTRUCTURE_Provisioner = 'infrastructure_Provisioner';
+    public const KEY_INFRASTRUCTURE_PROVISIONER = 'infrastructure_Provisioner';
 
     private array $content = [];
 
@@ -40,11 +40,11 @@ class ConfigurationLoader
      */
     public function getInfrastructureProvisionerOptions(string $path = self::DEFAULT_PATH): array
     {
-        if (!isset($this->load($path)[self::KEY_INFRASTRUCTURE_Provisioner])) {
-            throw new ConfigurationException(sprintf('“%s” key is missing from file.', self::KEY_INFRASTRUCTURE_Provisioner));
+        if (!isset($this->load($path)[self::KEY_INFRASTRUCTURE_PROVISIONER])) {
+            throw new ConfigurationException(sprintf('“%s” key is missing from file.', self::KEY_INFRASTRUCTURE_PROVISIONER));
         }
 
-        return $this->load($path)[self::KEY_INFRASTRUCTURE_Provisioner];
+        return $this->load($path)[self::KEY_INFRASTRUCTURE_PROVISIONER];
     }
 
     private function readYaml(string $path): array
