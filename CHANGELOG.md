@@ -1,8 +1,10 @@
-## 0.3.0 (unreleased)
+## 0.3.0
 
 - feat: removes support for PHP 7.3
 - feat: adds Fetcher infrastructure and first example with InfrastructureProvisioner
 - feat: removes HelloWorld example class
+- feat: add statefile to be more robust to fail
+- fix: wrong VPNM home
 - chore: updates dependencies
 
 ## 0.2.0
