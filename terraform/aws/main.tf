@@ -309,5 +309,5 @@ resource "aws_iam_instance_profile" "this" {
   name = "ipr-${local.name}"
   path = "/"
 
-  roles = [element(aws_iam_role.this_instance_profile.*.id, 0)]
+  role = element(aws_iam_role.this_instance_profile.*.id, 0)
 }
