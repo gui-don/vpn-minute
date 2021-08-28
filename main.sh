@@ -109,7 +109,7 @@ edit_entry_if_exist_in_statefile() {
 }
 
 edit_entry_if_existe_or_create_new_if_not_exist_in_statefile() {
-  if ! edit_entry_if_exist_in_statefile $1 $2; then 
+  if ! edit_entry_if_exist_in_statefile $1 $2; then
     add_entry_in_statefile "$1" "$2"
   fi
 }
@@ -122,7 +122,7 @@ configure_home() {
   print_message "Configure home…"
 
   mkdir -p $VPNM_HOME
-  edit_entry_if_existe_or_create_new_if_not_exist_in_statefile "home" "configured" 
+  edit_entry_if_existe_or_create_new_if_not_exist_in_statefile "home" "configured"
 
   print_message "✔ Home configured."
 }
@@ -348,7 +348,7 @@ generate_wireguard_keys() {
   export VPNM_WG_SERVER_PUBLIC_KEY=$(echo "$VPNM_WG_SERVER_KEY" | wg pubkey)
   edit_entry_if_existe_or_create_new_if_not_exist_in_statefile "wg_server_public_key" "$VPNM_WG_SERVER_PUBLIC_KEY"
   print_message "✔ wireguard server public key generated."
-  
+
   if ! check_if_key_exist_and_its_value_is_not_empty_in_statefile "wg_client_private_key"; then
     export VPNM_WG_CLIENT_KEY=$(wg genkey)
     add_entry_in_statefile "wg_client_private_key" "$VPNM_WG_CLIENT_KEY"
@@ -427,7 +427,7 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACC
 [Peer]\\n\
 PublicKey = $VPNM_WG_CLIENT_PUBLIC_KEY\\n\
 AllowedIPs = 192.168.2.2/32"
-  
+
   if [[ "$wg_server_config_in_state_file_base64" != $(echo -e "$wg_server_config" | base64 -w 0) || "$wg_server_config_in_state_file_base64" != $(cat $VPNM_WG_SERVER_CONFIG_FILE 2> /dev/null | base64 -w 0) ]]; then
     umask 066
     echo -e "$wg_server_config" > "$VPNM_WG_SERVER_CONFIG_FILE"
@@ -450,7 +450,7 @@ delete_wireguard_configurations() {
   rm -f $VPNM_WG_SERVER_CONFIG_FILE
   remove_entry_in_statefile "wg_server_config_file_base64"
 
-  
+
   remove_entry_in_statefile "wg_server_private_key"
   remove_entry_in_statefile "wg_server_public_key"
   remove_entry_in_statefile "wg_public_private_key"
@@ -542,14 +542,14 @@ deploy_infrastructure() {
 
   case $VPNM_PROVIDER in
   aws)
-    HOME=$VPNM_HOME terraform init "$VPNM_CODE_TERRAFORM_PATH/aws"
-    HOME=$VPNM_HOME terraform apply -state="$TF_STATE_FILE" -state-out="$TF_STATE_FILE" -auto-approve -var "ami_os=$VPNM_OS" -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" "$VPNM_CODE_TERRAFORM_PATH/aws"
+    HOME=$VPNM_HOME terraform -chdir="$VPNM_CODE_TERRAFORM_PATH/aws" init
+    HOME=$VPNM_HOME terraform -chdir="$VPNM_CODE_TERRAFORM_PATH/aws" apply -state="$TF_STATE_FILE" -state-out="$TF_STATE_FILE" -auto-approve -var "ami_os=$VPNM_OS" -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY"
 
     print_message "Waiting for SSH..."
 
     if [ "$VPNM_ALLOW_SSH" = true ]; then
       while [ "$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.ssh_known_hosts.value' | sed s/\"//g)" == "IN PROGRESS..." ]; do
-        HOME=$VPNM_HOME terraform refresh -state=$TF_STATE_FILE -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" "$VPNM_CODE_TERRAFORM_PATH/aws"
+        HOME=$VPNM_HOME terraform -chdir "$VPNM_CODE_TERRAFORM_PATH/aws" refresh -state=$TF_STATE_FILE -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY"
         sleep 4
       done
     fi
@@ -585,7 +585,7 @@ destroy_infrastructure() {
     local already_used_region="$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.region.value' | sed s/\"//g)"
 
     if [ -f "$TF_STATE_FILE" ]; then
-      HOME=$VPNM_HOME terraform destroy -force -state=$TF_STATE_FILE -state-out=$TF_STATE_FILE -auto-approve -var "destroy=true" -var "region=${already_used_region:+$AWS_DEFAULT_REGION}" -var "public_key=''" -var "base64_vpn_server_config=" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY" "$VPNM_CODE_TERRAFORM_PATH/aws"
+      HOME=$VPNM_HOME terraform -chdir="$VPNM_CODE_TERRAFORM_PATH/aws" destroy -force -state=$TF_STATE_FILE -state-out=$TF_STATE_FILE -auto-approve -var "destroy=true" -var "region=${already_used_region:+$AWS_DEFAULT_REGION}" -var "public_key=''" -var "base64_vpn_server_config=" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY"
     fi
     ;;
   *)
