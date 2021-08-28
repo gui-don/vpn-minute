@@ -165,9 +165,8 @@ build_package_archlinux_for_test:
     - export ARCHIVE_NAME="$CI_PROJECT_TITLE-$CURRENT_VERSION"
   script:
     - install/generate_pkgbuild.sh "$CURRENT_VERSION" "$PKGREL" "$B2SUM"
-    - mv ../$CI_PROJECT_TITLE/ ../$ARCHIVE_NAME/
-    - tar -czf "$ARCHIVE_NAME.tar.gz" ../$ARCHIVE_NAME
-    - mv ../$ARCHIVE_NAME/ ../$CI_PROJECT_TITLE/
+    - tar -P -czf "/tmp/$ARCHIVE_NAME.tar.gz" .
+    - mv "/tmp/$ARCHIVE_NAME.tar.gz" ./
     - sudo -u makepkg sh -c 'makepkg --printsrcinfo > "/tmp/.SRCINFO"'
     - cp /tmp/.SRCINFO .SRCINFO
   artifacts:
