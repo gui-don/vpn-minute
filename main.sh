@@ -542,7 +542,7 @@ deploy_infrastructure() {
 
   case $VPNM_PROVIDER in
   aws)
-    HOME=$VPNM_HOME terraform -chdir="$VPNM_CODE_TERRAFORM_PATH/aws" init
+    HOME=$VPNM_HOME terraform -chdir="$VPNM_CODE_TERRAFORM_PATH/aws" init -lockfile=readonly
     HOME=$VPNM_HOME terraform -chdir="$VPNM_CODE_TERRAFORM_PATH/aws" apply -state="$TF_STATE_FILE" -state-out="$TF_STATE_FILE" -auto-approve -var "ami_os=$VPNM_OS" -var "region=$AWS_DEFAULT_REGION" -var "public_key=$VPNM_SSH_PUBLIC_KEY" -var "base64_vpn_server_config=$(base64 $VPNM_WG_SERVER_CONFIG_FILE)" -var "application_name=$VPNM_APPLICATION_NAME" -var "allow_ssh=$VPNM_ALLOW_SSH" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY"
 
     print_message "Waiting for SSH..."
