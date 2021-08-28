@@ -585,7 +585,7 @@ destroy_infrastructure() {
     local already_used_region="$(HOME=$VPNM_HOME terraform output -state=$TF_STATE_FILE -json | jq '.region.value' | sed s/\"//g)"
 
     if [ -f "$TF_STATE_FILE" ]; then
-      HOME=$VPNM_HOME terraform -chdir="$VPNM_CODE_TERRAFORM_PATH/aws" destroy -force -state=$TF_STATE_FILE -state-out=$TF_STATE_FILE -auto-approve -var "destroy=true" -var "region=${already_used_region:+$AWS_DEFAULT_REGION}" -var "public_key=''" -var "base64_vpn_server_config=" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY"
+      HOME=$VPNM_HOME terraform -chdir="$VPNM_CODE_TERRAFORM_PATH/aws" destroy -auto-approve -state=$TF_STATE_FILE -state-out=$TF_STATE_FILE -auto-approve -var "destroy=true" -var "region=${already_used_region:+$AWS_DEFAULT_REGION}" -var "public_key=''" -var "base64_vpn_server_config=" -var "shared_credentials_file=$AWS_CREDENTIAL_FILE" -var "access_key=$AWS_ACCESS_KEY" -var "secret_key=$AWS_SECRET_ACCESS_KEY"
     fi
     ;;
   *)
