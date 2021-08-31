@@ -1,3 +1,7 @@
+## 0.3.2
+
+- fix: fixes missing installation lock file
+
 ## 0.3.1
 
 - fix: fixes Terraform code for 1.0.0+
