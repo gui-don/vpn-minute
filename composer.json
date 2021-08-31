@@ -6,12 +6,14 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": ">7.4, <=8.0",
+    "php": ">7.4, <8.1",
     "ext-mbstring": "*",
     "ext-intl": "*",
 
-    "symfony/config": "^5",
-    "symfony/dependency-injection": "^5",
+    "symfony/config": "^5.2, <5.3",
+    "symfony/dependency-injection": "^5.2, <5.3",
+    "psr/cache": "^1",
+    "psr/log": "^1.",
     "symfony/yaml": "^5",
     "symfony/finder": "^5",
     "gui-don/rico-library": "^3"
