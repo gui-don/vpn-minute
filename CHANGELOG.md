@@ -1,3 +1,9 @@
+## 0.3.1
+
+- fix: fixes Terraform code for 1.0.0+
+- test: fixes tests with PHP 8.0+
+- test: fixes archlinux builds
+
 ## 0.3.0
 
 - feat: removes support for PHP 7.3
