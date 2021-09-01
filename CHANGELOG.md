@@ -1,3 +1,7 @@
+## 0.3.3
+
+- fix: updates terraform lock file to use recent provider that handles more way to authenticate
+
 ## 0.3.2
 
 - fix: fixes missing installation lock file
