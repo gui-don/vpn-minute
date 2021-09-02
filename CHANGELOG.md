@@ -1,3 +1,7 @@
+## 0.3.4
+
+- fix: fixes wrong pinning in Terraform code
+
 ## 0.3.3
 
 - fix: updates terraform lock file to use recent provider that handles more way to authenticate

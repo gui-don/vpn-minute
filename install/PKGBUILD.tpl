@@ -7,7 +7,7 @@ pkgdesc="Create an on-demand/disposable VPN in a minute"
 arch=("any")
 url="https://gitlab.com/gui-don/vpn-minute/-/wikis/home"
 license=("GPL3")
-depends=("terraform>=0.12.25", "ldns>=1.7", "wireguard-tools>=1", "jq>=1", "sudo")
+depends=("terraform>=1.0.0", "ldns>=1.7", "wireguard-tools>=1", "jq>=1", "sudo")
 optdepends=("openssh: to SSH to the VPN")
 provides=("vpnm")
 source=("https://gitlab.com/gui-don/$pkgname/-/archive/$pkgver/vpn-minute-$pkgver.tar.gz")
